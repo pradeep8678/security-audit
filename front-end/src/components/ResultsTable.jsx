@@ -1,5 +1,5 @@
 export default function ResultsTable({ results }) {
-  if (!results || results.length === 0) return <div>No public VMs found.</div>;
+  if (!results || results.length === 0) return <div>No vulnerability Found</div>;
 
   return (
     <table border="1" cellPadding="8" style={{ marginTop: "20px", width: "100%" }}>
