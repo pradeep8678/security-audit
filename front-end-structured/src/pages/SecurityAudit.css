@@ -1,0 +1,58 @@
+.action-buttons {
+  display: flex;
+  justify-content: center;
+  gap: 15px;
+  margin: 20px 0;
+}
+
+/* Optional: if RunButton has its own style, match sizes here */
+.reset-btn {
+  padding: 10px 22px;
+  background-color: #f44336;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.2s ease, transform 0.1s ease;
+}
+
+.reset-btn:hover {
+  background-color: #d32f2f;
+  transform: translateY(-1px);
+}
+
+.reset-btn:active {
+  transform: scale(0.98);
+}
+.action-buttons {
+  display: flex;
+  justify-content: center;
+  gap: 15px;
+  margin: 20px 0;
+}
+
+/* Run + Reset already styled. Add Excel one: */
+.excel-btn {
+  padding: 10px 22px;
+  background-color: #2e7d32;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.2s ease, transform 0.1s ease;
+}
+
+.excel-btn:hover {
+  background-color: #1b5e20;
+  transform: translateY(-1px);
+}
+
+.excel-btn:active {
+  transform: scale(0.98);
+}
+
+h1, p {
+  text-align: center;
+}
