@@ -90,10 +90,10 @@ exports.listVMs = async (req, res) => {
       return res.status(400).json({ error: "No key file uploaded" });
     }
 
-    // ✅ Read key JSON directly from memory (no disk)
+    //  Read key JSON directly from memory (no disk)
     const keyFile = JSON.parse(req.file.buffer.toString("utf8"));
 
-    // ✅ Authenticate with Google
+    //  Authenticate with Google
     const auth = new google.auth.GoogleAuth({
       credentials: keyFile,
       scopes: ["https://www.googleapis.com/auth/cloud-platform"],
@@ -106,7 +106,7 @@ exports.listVMs = async (req, res) => {
 
     const projectId = keyFile.project_id;
 
-    // ✅ Get all available zones dynamically (status: UP)
+    // Get all available zones dynamically (status: UP)
     const zoneData = await compute.zones.list({ project: projectId });
     const allowedZones = (zoneData.data.items || [])
       .filter((z) => z.status === "UP")
@@ -116,7 +116,7 @@ exports.listVMs = async (req, res) => {
 
     const publicVMs = [];
 
-    // ✅ Iterate zones & list instances
+    // Iterate zones & list instances
     for (const zone of allowedZones) {
       try {
         console.log("🌍 Checking zone:", zone);
@@ -128,7 +128,7 @@ exports.listVMs = async (req, res) => {
 
         const instances = vmList.data.items || [];
 
-        // ✅ Keep only VMs with public IPs
+        // Keep only VMs with public IPs
         instances.forEach((vm) => {
           const nic = vm.networkInterfaces?.[0];
           const publicIP = nic?.accessConfigs?.[0]?.natIP;
@@ -149,7 +149,7 @@ exports.listVMs = async (req, res) => {
       }
     }
 
-    // ✅ Send results
+    //  Send results
     res.json({
       message: "Public VMs listed successfully",
       projectId,

@@ -2,7 +2,10 @@ require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const bodyParser = require('body-parser');
-const gcpRoutes = require('./routes/gcp');
+
+// ✅ Import routes
+const gcpRoutes = require('./routes/gcp');          // for VM scanning
+const bucketRoutes = require('./routes/bucket');    // for bucket scanning
 
 // ✅ Confirm correct server loaded
 console.log("✅ server.js loaded from:", __dirname);
@@ -27,7 +30,19 @@ app.use((req, res, next) => {
 app.use(bodyParser.json());
 
 // ✅ Mount API routes
-app.use('/api', gcpRoutes);
+app.use('/api', gcpRoutes);     // → /api/list-vms
+app.use('/api', bucketRoutes);  // → /api/list-buckets
+
+// ✅ 404 handler (optional)
+app.use((req, res) => {
+  res.status(404).json({ error: "Route not found" });
+});
+
+// ✅ Global error handler (optional)
+app.use((err, req, res, next) => {
+  console.error("❌ Server error:", err.stack);
+  res.status(500).json({ error: "Internal Server Error" });
+});
 
 // ✅ Start Server
 const PORT = process.env.PORT || 8080;
