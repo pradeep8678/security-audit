@@ -6,3 +6,5 @@ export async function listPublicVMs(file) {
   const { data } = await api.post("/list-vms", fd);
   return data;
 }
+
+// restore redux function
