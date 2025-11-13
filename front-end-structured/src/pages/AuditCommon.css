@@ -1,0 +1,37 @@
+.audit-section {
+  margin-top: 20px;
+}
+
+.scan-btn {
+  background-color: #007bff;
+  color: white;
+  border: none;
+  padding: 8px 14px;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.scan-btn:disabled {
+  background-color: #aaa;
+  cursor: not-allowed;
+}
+
+.result-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 10px;
+}
+
+.result-table th, .result-table td {
+  border: 1px solid #ddd;
+  padding: 6px 10px;
+}
+
+.warning {
+  color: #d97706;
+}
+
+.success {
+  color: #059669;
+  font-weight: 600;
+}

@@ -3,6 +3,7 @@ import Header from "../components/Header";
 import FileDropZone from "../components/FileDropZone";
 import VMAudit from "./VMAudit";
 import BucketAudit from "./BucketAudit";
+import FirewallAudit from "./FirewallAudit";
 import "./SecurityAudit.css";
 
 export default function SecurityAudit() {
@@ -24,12 +25,14 @@ export default function SecurityAudit() {
         </p>
       )}
 
-      {/* Show modules when file is present */}
+      {/* Show audit modules only when file is present */}
       {file && (
         <div style={{ marginTop: "30px" }}>
           <VMAudit file={file} />
           <hr style={{ margin: "30px 0", border: "0.5px solid #ddd" }} />
           <BucketAudit file={file} />
+          <hr style={{ margin: "30px 0", border: "0.5px solid #ddd" }} />
+          <FirewallAudit file={file} /> {/* 🔥 New section */}
         </div>
       )}
     </div>

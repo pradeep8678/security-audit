@@ -1,3 +1,4 @@
+
 require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
@@ -6,6 +7,7 @@ const bodyParser = require('body-parser');
 // ✅ Import routes
 const gcpRoutes = require('./routes/gcp');          // for VM scanning
 const bucketRoutes = require('./routes/bucket');    // for bucket scanning
+const firewallRoutes = require('./routes/firewall');
 
 // ✅ Confirm correct server loaded
 console.log("✅ server.js loaded from:", __dirname);
@@ -32,6 +34,7 @@ app.use(bodyParser.json());
 // ✅ Mount API routes
 app.use('/api', gcpRoutes);     // → /api/list-vms
 app.use('/api', bucketRoutes);  // → /api/list-buckets
+app.use('/api', firewallRoutes);
 
 // ✅ 404 handler (optional)
 app.use((req, res) => {
