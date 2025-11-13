@@ -1,9 +1,15 @@
 import { useState } from "react";
 import Header from "../components/Header";
 import FileDropZone from "../components/FileDropZone";
+
 import VMAudit from "./VMAudit";
 import BucketAudit from "./BucketAudit";
 import FirewallAudit from "./FirewallAudit";
+import SqlAudit from "./SqlAudit";
+import GKEAudit from "./GKEAudit";
+import OwnerAudit from "./OwnerAudit";
+import LBAudit from "./LBAudit"; // Load Balancer
+import CloudRunAudit from "./CloudRunAudit"; // ✅ Cloud Functions / Cloud Run
 import "./SecurityAudit.css";
 
 export default function SecurityAudit() {
@@ -30,9 +36,28 @@ export default function SecurityAudit() {
         <div style={{ marginTop: "30px" }}>
           <VMAudit file={file} />
           <hr style={{ margin: "30px 0", border: "0.5px solid #ddd" }} />
+
           <BucketAudit file={file} />
           <hr style={{ margin: "30px 0", border: "0.5px solid #ddd" }} />
-          <FirewallAudit file={file} /> {/* 🔥 New section */}
+
+          <FirewallAudit file={file} />
+          <hr style={{ margin: "30px 0", border: "0.5px solid #ddd" }} />
+
+          <SqlAudit file={file} />
+          <hr style={{ margin: "30px 0", border: "0.5px solid #ddd" }} />
+
+          <GKEAudit file={file} />
+          <hr style={{ margin: "30px 0", border: "0.5px solid #ddd" }} />
+
+          <OwnerAudit file={file} />
+          <hr style={{ margin: "30px 0", border: "0.5px solid #ddd" }} />
+
+          {/* Load Balancer Audit */}
+          <LBAudit file={file} />
+          <hr style={{ margin: "30px 0", border: "0.5px solid #ddd" }} />
+
+          {/* ✅ Cloud Functions / Cloud Run Audit */}
+          <CloudRunAudit file={file} />
         </div>
       )}
     </div>

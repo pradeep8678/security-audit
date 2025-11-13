@@ -8,6 +8,11 @@ const bodyParser = require('body-parser');
 const gcpRoutes = require('./routes/gcp');          // for VM scanning
 const bucketRoutes = require('./routes/bucket');    // for bucket scanning
 const firewallRoutes = require('./routes/firewall');
+const sqlRoutes = require('./routes/sql'); 
+const gkeRoutes = require("./routes/gke");
+const ownerRoutes = require("./routes/owner");
+const lbRoutes = require("./routes/lbRoutes");
+const cloudrunRoutes = require("./routes/cloudrun");
 
 // ✅ Confirm correct server loaded
 console.log("✅ server.js loaded from:", __dirname);
@@ -35,6 +40,11 @@ app.use(bodyParser.json());
 app.use('/api', gcpRoutes);     // → /api/list-vms
 app.use('/api', bucketRoutes);  // → /api/list-buckets
 app.use('/api', firewallRoutes);
+app.use('/api', sqlRoutes); 
+app.use("/api", gkeRoutes);
+app.use("/api", ownerRoutes);
+app.use("/api", lbRoutes);
+app.use("/api", cloudrunRoutes);
 
 // ✅ 404 handler (optional)
 app.use((req, res) => {

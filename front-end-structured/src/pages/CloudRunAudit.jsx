@@ -1,13 +1,13 @@
 import { useState } from "react";
 import RunButton from "../components/RunButton";
-import StatusBar from "../components/StatusBar";
 import ResultsTable from "../components/ResultsTable";
-import { scanFirewall } from "../api/firewall";
+import StatusBar from "../components/StatusBar";
+import { checkCloudFunctionsAndRuns } from "../api/cloudrun";
 import "./SecurityAudit.css";
 import * as XLSX from "xlsx";
 import { saveAs } from "file-saver";
 
-export default function FirewallAudit({ file }) {
+export default function CloudRunAudit({ file }) {
   const [status, setStatus] = useState("idle");
   const [error, setError] = useState(null);
   const [projectId, setProjectId] = useState(null);
@@ -23,23 +23,29 @@ export default function FirewallAudit({ file }) {
       setStatus("loading");
       setError(null);
 
-      const res = await scanFirewall(file);
-      console.log("🔥 Firewall API response:", res);
+      const res = await checkCloudFunctionsAndRuns(file);
+      console.log("🔍 Cloud Functions & Run API response:", res);
 
-      setProjectId(res.projectId || "Unknown Project");
+      setProjectId(res.projectId);
 
-      const publicRules = (res.publicRules || []).map((r) => ({
-        name: r.name,
-        network: r.network,
-        direction: r.direction,
-        sourceRanges: r.sourceRanges?.join(", "),
-        recommendation: "⚠️ Rule open to public (0.0.0.0/0) — restrict to trusted IPs.",
+      const functionsRuns = (res.functionsAndRuns || []).map((item) => ({
+        type: item.type,
+        name: item.name,
+        region: item.region,
+        runtime: item.runtime,
+        url: item.url,
+        ingress: item.ingress,
+        auth: item.auth,
+        serviceAccount: item.serviceAccount,
+        unauthenticated: item.unauthenticated,
+        exposureRisk: item.exposureRisk,
+        recommendation: item.recommendation,
       }));
 
-      setResults(publicRules);
+      setResults(functionsRuns);
       setStatus("success");
     } catch (err) {
-      console.error("Error during firewall scan:", err);
+      console.error("Error scanning Cloud Functions & Runs:", err);
       setError(err.message || String(err));
       setStatus("error");
     }
@@ -54,15 +60,15 @@ export default function FirewallAudit({ file }) {
 
   const onDownloadExcel = () => {
     if (!results.length) {
-      alert("No firewall data to export yet!");
+      alert("No Cloud Run / Function data to export yet!");
       return;
     }
 
     const worksheet = XLSX.utils.json_to_sheet(results);
     const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, "Firewall Rules");
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Cloud Functions & Run");
 
-    const filename = `GCP_Firewall_Audit_${projectId || "results"}.xlsx`;
+    const filename = `GCP_CloudRun_Audit_${projectId || "results"}.xlsx`;
     const excelBuffer = XLSX.write(workbook, { bookType: "xlsx", type: "array" });
     const blob = new Blob([excelBuffer], {
       type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
@@ -72,11 +78,11 @@ export default function FirewallAudit({ file }) {
 
   return (
     <div className="module-box">
-      <h2 style={{ textAlign: "center", color: "#24314f" }}>🔥 Firewall Rules Audit</h2>
+      <h2 style={{ textAlign: "center", color: "#24314f" }}>Cloud Functions & Cloud Run Audit</h2>
 
       <div className="action-buttons">
         <RunButton
-          title="Run Firewall Audit"
+          title="Run Audit"
           onClick={onRun}
           disabled={status === "loading"}
         />
@@ -85,12 +91,6 @@ export default function FirewallAudit({ file }) {
       </div>
 
       <StatusBar status={status} error={error} projectId={projectId} />
-
-      {status === "success" && !results.length && (
-        <p className="success" style={{ textAlign: "center", marginTop: "1rem" }}>
-          ✅ All firewall rules are restricted. No public access detected.
-        </p>
-      )}
 
       <ResultsTable results={results} />
     </div>
