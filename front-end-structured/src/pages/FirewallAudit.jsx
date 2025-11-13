@@ -1,9 +1,10 @@
 import { useState } from "react";
+import Header from "../components/Header";
 import RunButton from "../components/RunButton";
-import StatusBar from "../components/StatusBar";
 import ResultsTable from "../components/ResultsTable";
+import StatusBar from "../components/StatusBar";
 import { scanFirewall } from "../api/firewall";
-import "./SecurityAudit.css";
+import "./SecurityAudit.css"; // SAME CSS as BucketAudit
 import * as XLSX from "xlsx";
 import { saveAs } from "file-saver";
 
@@ -22,25 +23,23 @@ export default function FirewallAudit({ file }) {
     try {
       setStatus("loading");
       setError(null);
-
       const res = await scanFirewall(file);
-      console.log("🔥 Firewall API response:", res);
 
-      setProjectId(res.projectId || "Unknown Project");
+      setProjectId(res.projectId || "unknown");
 
-      const publicRules = (res.publicRules || []).map((r) => ({
-        name: r.name,
-        network: r.network,
-        direction: r.direction,
-        sourceRanges: r.sourceRanges?.join(", "),
-        recommendation: "⚠️ Rule open to public (0.0.0.0/0) — restrict to trusted IPs.",
+      const enhanced = (res.publicRules || []).map(rule => ({
+        name: rule.name,
+        network: rule.network,
+        direction: rule.direction,
+        sourceRanges: rule.sourceRanges?.join(", "),
+        recommendation: "⚠️ Rule is publicly open. Restrict to trusted IPs.",
       }));
 
-      setResults(publicRules);
+      setResults(enhanced);
       setStatus("success");
     } catch (err) {
-      console.error("Error during firewall scan:", err);
-      setError(err.message || String(err));
+      console.error("Firewall scan failed:", err);
+      setError(err.message || "Failed to scan firewall rules");
       setStatus("error");
     }
   };
@@ -63,7 +62,11 @@ export default function FirewallAudit({ file }) {
     XLSX.utils.book_append_sheet(workbook, worksheet, "Firewall Rules");
 
     const filename = `GCP_Firewall_Audit_${projectId || "results"}.xlsx`;
-    const excelBuffer = XLSX.write(workbook, { bookType: "xlsx", type: "array" });
+    const excelBuffer = XLSX.write(workbook, {
+      bookType: "xlsx",
+      type: "array",
+    });
+
     const blob = new Blob([excelBuffer], {
       type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
     });
@@ -72,7 +75,9 @@ export default function FirewallAudit({ file }) {
 
   return (
     <div className="module-box">
-      <h2 style={{ textAlign: "center", color: "#24314f" }}>🔥 Firewall Rules Audit</h2>
+      <h2 style={{ textAlign: "center", color: "#24314f" }}>
+        Firewall Rules Audit
+      </h2>
 
       <div className="action-buttons">
         <RunButton
@@ -80,17 +85,15 @@ export default function FirewallAudit({ file }) {
           onClick={onRun}
           disabled={status === "loading"}
         />
-        <button className="reset-btn" onClick={onReset}>Reset</button>
-        <button className="excel-btn" onClick={onDownloadExcel}>Download Excel</button>
+        <button className="reset-btn" onClick={onReset}>
+          Reset
+        </button>
+        <button className="excel-btn" onClick={onDownloadExcel}>
+          Download Excel
+        </button>
       </div>
 
       <StatusBar status={status} error={error} projectId={projectId} />
-
-      {status === "success" && !results.length && (
-        <p className="success" style={{ textAlign: "center", marginTop: "1rem" }}>
-          ✅ All firewall rules are restricted. No public access detected.
-        </p>
-      )}
 
       <ResultsTable results={results} />
     </div>
