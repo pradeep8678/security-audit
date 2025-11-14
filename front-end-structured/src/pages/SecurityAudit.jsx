@@ -21,10 +21,12 @@ export default function SecurityAudit() {
 
   return (
     <div className="container">
+      <div className="header-class">
       <Header
         title="GCP Security Audit Dashboard"
         subtitle="Upload your GCP Service Account JSON once and run a full audit"
       />
+      </div>
 
       {/* File upload */}
       <FileDropZone file={file} onFile={setFile} />

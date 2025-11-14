@@ -1,14 +1,17 @@
+// FullAudit.jsx (Updated with hard‑coded recommendations for ALL services)
+
 import { useState } from "react";
 import client from "../api/client";
 import ExportToExcel from "../components/ExportToExcel";
 import ExportToPDF from "../components/ExportToPDF";
+import styles from "./FullAudit.module.css";
 
 export default function FullAudit({ file }) {
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState({});
   const [error, setError] = useState("");
-  const [selectedResource, setSelectedResource] = useState(null); 
-  const [showDropdown, setShowDropdown] = useState(false); 
+  const [selectedResource, setSelectedResource] = useState(null);
+  const [showDropdown, setShowDropdown] = useState(false);
 
   const resourceList = [
     "Buckets",
@@ -20,6 +23,15 @@ export default function FullAudit({ file }) {
     "Owner IAM Roles",
     "VM Instances",
   ];
+
+  const readable = (value) => {
+    if (Array.isArray(value)) return value.map((v) => readable(v)).join(", ");
+    if (typeof value === "object" && value !== null)
+      return Object.entries(value)
+        .map(([k, v]) => `${k}: ${readable(v)}`)
+        .join(", ");
+    return value;
+  };
 
   const handleFullAudit = async () => {
     if (!file) {
@@ -53,40 +65,73 @@ export default function FullAudit({ file }) {
     }
   };
 
-  const renderTable = (items) => {
-    if (!items || items.length === 0)
-      return <p style={{ fontStyle: "italic" }}>No data available</p>;
+  const addRecommendation = (items, name) => {
+    return items.map((item) => {
+      if (item.recommendation) return item;
 
-    const headers = Object.keys(items[0]);
+      let rec = "";
+
+      if (name === "Firewall Rules") {
+        const src = item.sourceRanges?.join(", ") || "unknown";
+        rec = `This firewall rule is public with source ${src}. Make it private and restrict CIDR.`;
+      }
+
+      else if (name === "VM Instances") {
+        const ip = item.publicIP || "unknown";
+        rec = `This VM is publicly accessible with IP ${ip}. Remove public IP and place behind a private network.`;
+      }
+
+      else if (name === "GKE Clusters") {
+        const ep = item.endpoint || "unknown";
+        rec = `GKE endpoint ${ep} is public. Enable private clusters and restrict control plane access.`;
+      }
+
+      else if (name === "Cloud Run / Functions") {
+        const url = item.url || item.name || "service";
+        rec = `The Cloud Run/Function ${url} is public. Restrict ingress and disable unauthenticated access.`;
+      }
+
+      else if (name === "Buckets") {
+        rec = "Bucket appears private. Ensure uniform bucket-level access and IAM restrictions.";
+      }
+
+      else if (name === "SQL Instances") {
+        rec = "SQL instance should stay private. Ensure public IP is disabled and use private service networking.";
+      }
+
+      else if (name === "Load Balancers") {
+        rec = "Review LB frontends and ensure only intended services are publicly reachable.";
+      }
+
+      else if (name === "Owner IAM Roles") {
+        rec = "Owner role is highly privileged. Replace with least‑privilege IAM roles.";
+      }
+
+      return { ...item, recommendation: rec };
+    });
+  };
+
+  const renderTable = (items, name) => {
+    if (!items || items.length === 0)
+      return <p className={styles.noData}>No data available</p>;
+
+    const enriched = addRecommendation(items, name);
+    const headers = [...new Set([...Object.keys(enriched[0])])];
 
     return (
-      <table style={{ borderCollapse: "collapse", width: "100%", marginTop: "10px" }}>
-        <thead style={{ background: "#007bff", color: "#fff" }}>
+      <table className={styles.table}>
+        <thead>
           <tr>
             {headers.map((key) => (
-              <th
-                key={key}
-                style={{ border: "1px solid #ccc", padding: "8px", textAlign: "left" }}
-              >
-                {key}
-              </th>
+              <th key={key}>{key}</th>
             ))}
           </tr>
         </thead>
         <tbody>
-          {items.map((item, idx) => (
-            <tr
-              key={idx}
-              style={{ background: idx % 2 === 0 ? "#f9f9f9" : "#fff", transition: "0.3s" }}
-              onMouseEnter={(e) => (e.currentTarget.style.background = "#e0f7ff")}
-              onMouseLeave={(e) =>
-                (e.currentTarget.style.background = idx % 2 === 0 ? "#f9f9f9" : "#fff")
-              }
-            >
+          {enriched.map((item, idx) => (
+            <tr key={idx}>
               {headers.map((key) => (
-                <td key={key} style={{ border: "1px solid #ccc", padding: "8px" }}>
-                  {typeof item[key] === "object" ? JSON.stringify(item[key]) : item[key]}
-                </td>
+                <td key={key}>{readable(item[key] ?? "-")}</td>
               ))}
             </tr>
           ))}
@@ -98,180 +143,85 @@ export default function FullAudit({ file }) {
   const renderResource = (name) => {
     if (!result[name]) return null;
 
-    let field;
-    switch (name) {
-      case "Buckets":
-        field = "buckets";
-        break;
-      case "Firewall Rules":
-        field = "publicRules";
-        break;
-      case "GKE Clusters":
-        field = "clusters";
-        break;
-      case "SQL Instances":
-        field = "instances";
-        break;
-      case "Cloud Run / Functions":
-        field = "functionsAndRuns";
-        break;
-      case "Load Balancers":
-        field = "loadBalancers";
-        break;
-      case "Owner IAM Roles":
-        field = "ownerServiceAccounts";
-        break;
-      case "VM Instances":
-        field = "instances";
-        break;
-      default:
-        field = null;
-    }
+    const mapping = {
+      "Buckets": "buckets",
+      "Firewall Rules": "publicRules",
+      "GKE Clusters": "clusters",
+      "SQL Instances": "instances",
+      "Cloud Run / Functions": "functionsAndRuns",
+      "Load Balancers": "loadBalancers",
+      "Owner IAM Roles": "ownerServiceAccounts",
+      "VM Instances": "instances",
+    };
+
+    const field = mapping[name] || null;
 
     return (
-      <div
-        key={name}
-        style={{
-          textAlign: "left",
-          margin: "20px 0",
-          padding: "20px",
-          borderRadius: "10px",
-          boxShadow: "0 4px 10px rgba(0,0,0,0.1)",
-          background: "#fff",
-          transition: "0.3s",
-        }}
-      >
-        <h3 style={{ color: field ? "#007bff" : "#333" }}>{name}</h3>
-        {field && renderTable(result[name][field])}
+      <div className={styles.card}>
+        <h3 className={styles.cardTitle}>{name}</h3>
+        {field && renderTable(result[name][field], name)}
       </div>
     );
   };
 
   return (
-    <div style={{ maxWidth: "1200px", margin: "20px auto", fontFamily: "Arial, sans-serif" }}>
-      <h1 style={{ textAlign: "center", color: "#007bff" }}>Full GCP Security Audit</h1>
-      <p style={{ textAlign: "center", color: "#555" }}>
-        Run a complete security audit across all GCP resources
-      </p>
+    <div className={styles.container}>
+      <div className={styles.subbox}>
 
-      {/* Run Audit Button */}
-      <div style={{ textAlign: "center", marginBottom: "20px" }}>
+      <div className={styles.center}>
         <button
           onClick={handleFullAudit}
           disabled={loading}
-          style={{
-            backgroundColor: loading ? "#aaa" : "#007bff",
-            color: "#fff",
-            border: "none",
-            padding: "12px 30px",
-            borderRadius: "8px",
-            cursor: "pointer",
-            fontSize: "16px",
-            transition: "0.3s",
-            marginRight: "10px",
-          }}
+          className={loading ? styles.btnDisabled : styles.btnPrimary}
         >
           {loading ? "Running..." : "Run Full Audit"}
         </button>
 
-        {/* ✅ DOWNLOAD BUTTON ONLY WHEN RESULTS EXIST */}
         {Object.keys(result).length > 0 && (
-          <div style={{ display: "inline-block", position: "relative" }}>
+          <div className={styles.dropdownWrapper}>
             <button
               onClick={() => setShowDropdown(!showDropdown)}
-              style={{
-                backgroundColor: "#28a745",
-                color: "#fff",
-                border: "none",
-                padding: "12px 20px",
-                borderRadius: "8px",
-                cursor: "pointer",
-                fontSize: "16px",
-              }}
+              className={styles.btnSuccess}
             >
               Download ▼
             </button>
 
             {showDropdown && (
-              <div
-                style={{
-                  position: "absolute",
-                  top: "50px",
-                  left: "0",
-                  background: "#fff",
-                  boxShadow: "0 4px 10px rgba(0,0,0,0.1)",
-                  borderRadius: "8px",
-                  overflow: "hidden",
-                  zIndex: 10,
-                  minWidth: "150px",
-                }}
-              >
-                <div style={{ padding: "0px", borderBottom: "1px solid #ccc" }}>
-                  <ExportToExcel
-                    auditResult={result}
-                    onClick={() => setShowDropdown(false)}
-                  />
+              <div className={styles.dropdownMenu}>
+                <div>
+                  <ExportToExcel auditResult={result} onClick={() => setShowDropdown(false)} />
                 </div>
-
-                <div style={{ padding: "0px", borderBottom: "1px solid #ccc" }}>
-                  <ExportToPDF
-                    auditResult={result}
-                    onClick={() => setShowDropdown(false)}
-                  />
+                <div>
+                  <ExportToPDF auditResult={result} onClick={() => setShowDropdown(false)} />
                 </div>
-
               </div>
             )}
           </div>
         )}
       </div>
 
-      {error && <p style={{ color: "red", textAlign: "center" }}>{error}</p>}
+      {error && <p className={styles.error}>{error}</p>}
 
-      {/* Resource selector */}
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "center",
-          gap: "10px",
-          flexWrap: "wrap",
-          marginBottom: "20px",
-        }}
-      >
+      <div className={styles.selectorWrapper}>
         {resourceList.map((res) => (
           <div
             key={res}
             onClick={() => setSelectedResource(res)}
-            style={{
-              padding: "10px 20px",
-              borderRadius: "20px",
-              cursor: "pointer",
-              border: selectedResource === res ? "2px solid #007bff" : "1px solid #ccc",
-              background: selectedResource === res ? "#e0f0ff" : "#f2f2f2",
-              transition: "0.3s",
-              fontWeight: "bold",
-            }}
+            className={selectedResource === res ? styles.selectedChip : styles.chip}
           >
             {res}
           </div>
         ))}
+
         <div
           onClick={() => setSelectedResource(null)}
-          style={{
-            padding: "10px 20px",
-            borderRadius: "20px",
-            cursor: "pointer",
-            border: selectedResource === null ? "2px solid #007bff" : "1px solid #ccc",
-            background: selectedResource === null ? "#e0f0ff" : "#f2f2f2",
-            transition: "0.3s",
-            fontWeight: "bold",
-          }}
+          className={selectedResource === null ? styles.selectedChip : styles.chip}
         >
           All
         </div>
       </div>
+      </div>
 
-      {/* Display selected resource or all */}
       {selectedResource
         ? renderResource(selectedResource)
         : resourceList.map((res) => renderResource(res))}

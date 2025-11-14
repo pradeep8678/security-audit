@@ -1,3 +1,5 @@
+
+
 .action-buttons {
   display: flex;
   justify-content: center;
@@ -53,6 +55,42 @@
   transform: scale(0.98);
 }
 
-h1, p {
+h1 {
+  text-align: center;
+  font-family: "Kumbh Sans", sans-serif;
+  font-size: 44px;
+  font-weight: 900;
+  color: #ffffff;
+  letter-spacing: -1px;
+  text-shadow: 0 4px 14px rgba(238, 232, 232, 0.08);
+  margin-bottom: 12px;
+  
+}
+
+.header-class {
+  width: 100%;
+  padding: 40px 20px;
+  margin-bottom: 30px;
+
+  /* Premium gradient */
+  background: linear-gradient(135deg, #1d1d1f 0%, #010205 40%, #2d2d30 100%);
+
+  /* Subtle neon border glow */
+  /* border-bottom: 4px solid rgba(102, 204, 255, 0.4); */
+
+  /* Soft glow under banner */
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.45);
+
+  /* border-radius: 0 0 18px 18px; */
   text-align: center;
 }
+
+
+p {
+  text-align: center;
+  font-family: "Kumbh Sans", sans-serif;
+  color: #f3f6ff;
+  font-size: 17px;
+}
+
+
