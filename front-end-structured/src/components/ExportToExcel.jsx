@@ -154,16 +154,26 @@ export default function ExportToExcel({ auditResult, onClick }) {
       onClick={handleExport}
       style={{
         padding: "10px 15px",
-        background: "#d9485f",
-        color: "white",
+        color: "black",
         border: "none",
         width: "100%",
         borderRadius: "0px",
         cursor: "pointer",
         fontWeight: "bold",
+        background: "transparent",
+        transition: "0.25s ease",
+      }}
+      onMouseEnter={(e) => {
+        e.target.style.background = "#e9f3ff";
+        e.target.style.color = "#0d6efd";
+      }}
+      onMouseLeave={(e) => {
+        e.target.style.background = "transparent";
+        e.target.style.color = "black";
       }}
     >
       Download Excel
     </button>
+
   );
 }

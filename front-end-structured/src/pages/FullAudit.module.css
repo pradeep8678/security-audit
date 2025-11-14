@@ -104,7 +104,7 @@
     position: relative;
 }
 
-.dropdownMenu {
+/* .dropdownMenu {
     position: absolute;
     top: 55px;
     left: 0;
@@ -117,8 +117,23 @@
     min-width: 180px;
     padding: 5px 0;
     animation: fadeIn 0.25s ease-in-out;
-}
+} */
 
+
+.dropdownMenu{
+    position: absolute;
+    padding: 5px 0 ;
+    /* top: 55px;
+    left: 0; */
+    background: #ffffffdd;
+    backdrop-filter: blur(8px);
+    box-shadow: 0px 8px 20px rgba(0, 0, 0, 0.15);
+    border-radius: 12px;
+    overflow: hidden;
+    z-index: 20;
+    min-width: 180px;
+    animation: fadeIn 0.25s ease-in-out;
+}
 @keyframes fadeIn {
     from {
         opacity: 0;

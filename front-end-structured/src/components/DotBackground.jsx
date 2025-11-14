@@ -21,7 +21,7 @@ export default function DotBackground() {
         gap={18}
 
         // ★ Default faded grey dots
-        baseColor="#A0A0A0"        // soft grey (you can also use #888 for darker)
+        baseColor="#5730e4ff"        // soft grey (you can also use #888 for darker)
 
         // ★ Light blue active color near pointer
       activeColor="#66CCFF"     // smooth light blue glow

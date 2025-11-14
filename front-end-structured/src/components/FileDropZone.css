@@ -30,7 +30,7 @@
   border-color: #0d6efd;
   background: linear-gradient(180deg, #f6faff, #e7efff);
   box-shadow: 0 0 0 4px rgba(13, 110, 253, 0.15),
-              0 8px 25px rgba(0, 40, 120, 0.2);
+    0 8px 25px rgba(0, 40, 120, 0.2);
   transform: translateY(-4px);
 }
 
@@ -94,4 +94,75 @@
   color: #333;
   font-weight: 500;
   opacity: 0.85;
+}
+
+
+.dropzone-header-3col {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  position: relative;
+  margin-bottom: 10px;
+}
+
+.dz-left {
+  height: 100%;
+}
+
+.dz-center {
+  display: flex;
+  justify-content: center;
+  text-align: center;
+}
+
+.dz-right {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  /* icon aligned left */
+  padding-left: 10px;
+}
+
+.help-icon-dz {
+  position: relative;
+  cursor: pointer;
+}
+
+.help-icon-dz-svg {
+  font-size: 22px;
+  color: #0d6efd;
+  transition: 0.25s ease;
+}
+
+.help-icon-dz-svg:hover {
+  transform: scale(1.15);
+}
+
+/* Tooltip */
+.help-tooltip-dz {
+  position: absolute;
+  top: 30px;
+  left: 0;
+  background: white;
+  color: #333;
+  padding: 8px 12px;
+  font-size: 13px;
+  border-radius: 6px;
+  border: 1px solid #d4d4d4;
+  white-space: nowrap;
+  text-align: left;
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(-4px);
+  transition: all 0.25s ease;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  z-index: 999;
+  font-family: "Kumbh Sans", sans-serif;
+}
+
+/* Show tooltip on hover */
+.help-icon-dz:hover .help-tooltip-dz {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
 }

@@ -1,5 +1,6 @@
-
-
+/* ============================
+   ACTION BUTTONS
+============================= */
 .action-buttons {
   display: flex;
   justify-content: center;
@@ -7,7 +8,6 @@
   margin: 20px 0;
 }
 
-/* Optional: if RunButton has its own style, match sizes here */
 .reset-btn {
   padding: 10px 22px;
   background-color: #f44336;
@@ -27,14 +27,7 @@
 .reset-btn:active {
   transform: scale(0.98);
 }
-.action-buttons {
-  display: flex;
-  justify-content: center;
-  gap: 15px;
-  margin: 20px 0;
-}
 
-/* Run + Reset already styled. Add Excel one: */
 .excel-btn {
   padding: 10px 22px;
   background-color: #2e7d32;
@@ -55,6 +48,75 @@
   transform: scale(0.98);
 }
 
+/* ============================
+   HEADER (Title + Subtitle)
+============================= */
+
+.header-class {
+  width: 100%;
+  margin-bottom: 30px;
+
+  background: linear-gradient(135deg, #1d1d1f 0%, #010205 40%, #2d2d30 100%);
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.45);
+
+  /* padding: 40px 20px; */
+}
+
+/* CENTER TITLE + RIGHT LOGO */
+.header-row {
+  display: flex;
+  align-items: center;
+  justify-content: center; /* keeps heading centered */
+  position: relative;      /* logo uses absolute inside this */
+}
+
+.header-3col {
+  width: 100%;
+  display: grid;
+  grid-template-columns: 1fr auto 1fr; /* Equal left & right, auto-center */
+  align-items: center;
+  position: relative;
+}
+
+/* CENTER TITLE BOX */
+.header-center {
+  display: flex;
+  justify-content: center;
+  text-align: center;
+}
+
+/* LEFT BOX (empty but keeps structure perfect) */
+.header-left {
+  height: 100%;
+}
+
+/* RIGHT BOX */
+.header-right {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+
+/* LOGO (Right side) */
+.header-logo {
+  height: 90px;
+  width: auto;
+  display: block;       /* IMPORTANT for video */
+  border-radius: 6px;   /* keep your logo clean */
+  filter: drop-shadow(0 4px 6px rgba(134, 175, 22, 0.35));
+  transition: transform 0.25s ease;
+}
+
+
+.header-logo:hover {
+  transform: scale(1.07);
+}
+
+/* ============================
+   HEADINGS & TEXT
+============================= */
+
 h1 {
   text-align: center;
   font-family: "Kumbh Sans", sans-serif;
@@ -64,27 +126,7 @@ h1 {
   letter-spacing: -1px;
   text-shadow: 0 4px 14px rgba(238, 232, 232, 0.08);
   margin-bottom: 12px;
-  
 }
-
-.header-class {
-  width: 100%;
-  padding: 40px 20px;
-  margin-bottom: 30px;
-
-  /* Premium gradient */
-  background: linear-gradient(135deg, #1d1d1f 0%, #010205 40%, #2d2d30 100%);
-
-  /* Subtle neon border glow */
-  /* border-bottom: 4px solid rgba(102, 204, 255, 0.4); */
-
-  /* Soft glow under banner */
-  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.45);
-
-  /* border-radius: 0 0 18px 18px; */
-  text-align: center;
-}
-
 
 p {
   text-align: center;
@@ -93,4 +135,11 @@ p {
   font-size: 17px;
 }
 
+/* ============================
+   GENERAL PAGE CONTAINER
+============================= */
 
+.container {
+  width: 100%;
+  min-height: 100vh;
+}

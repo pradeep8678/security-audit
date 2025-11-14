@@ -3,6 +3,7 @@ import Header from "../components/Header";
 import FileDropZone from "../components/FileDropZone";
 import FullAudit from "./FullAudit";
 import "./SecurityAudit.css";
+import logo from "../assets/cavideo2.mp4";
 
 export default function SecurityAudit() {
   const [file, setFile] = useState(null);
@@ -22,17 +23,47 @@ export default function SecurityAudit() {
   return (
     <div className="container">
       <div className="header-class">
-      <Header
-        title="GCP Security Audit Dashboard"
-        subtitle="Upload your GCP Service Account JSON once and run a full audit"
-      />
+        <div className="header-3col">
+
+          {/* LEFT EMPTY SPACE */}
+          <div className="header-left"></div>
+
+          {/* CENTER TITLE */}
+          <div className="header-center">
+            <Header
+              title="GCP Security Audit Dashboard"
+              subtitle="Upload your GCP Service Account JSON once and run a full audit"
+            />
+          </div>
+
+          {/* RIGHT LOGO */}
+          <div className="header-right">
+            <a
+              href="https://cloudambassadors.com/"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              <video
+                src={logo}
+                className="header-logo"
+                autoPlay
+                loop
+                muted
+                playsInline
+              />
+            </a>
+          </div>
+
+        </div>
       </div>
+
+
 
       {/* File upload */}
       <FileDropZone file={file} onFile={setFile} />
 
       {!file && (
-        <p style={{ textAlign: "center", color: "#666", marginTop: "10px" }}>
+        <p style={{ textAlign: "center", color: "#f1eaeaff", marginTop: "10px" }}>
           Please upload your Service Account JSON to start the full audit.
         </p>
       )}
