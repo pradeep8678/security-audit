@@ -13,6 +13,7 @@ const gkeRoutes = require("./routes/gke");
 const ownerRoutes = require("./routes/owner");
 const lbRoutes = require("./routes/lbRoutes");
 const cloudrunRoutes = require("./routes/cloudrun");
+const fullAuditRoutes = require('./routes/fullAudit');
 
 // ✅ Confirm correct server loaded
 console.log("✅ server.js loaded from:", __dirname);
@@ -45,6 +46,7 @@ app.use("/api", gkeRoutes);
 app.use("/api", ownerRoutes);
 app.use("/api", lbRoutes);
 app.use("/api", cloudrunRoutes);
+app.use('/api', fullAuditRoutes);
 
 // ✅ 404 handler (optional)
 app.use((req, res) => {

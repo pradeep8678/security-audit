@@ -1,14 +1,12 @@
 const { google } = require("googleapis");
 
-exports.listBuckets = async (req, res) => {
+/**
+ * 🔍 Pure function for use in full audit
+ * Takes GCP credentials object (parsed JSON)
+ * Returns bucket audit data (no res.json here)
+ */
+async function analyzeBuckets(keyFile) {
   try {
-    if (!req.file) {
-      return res.status(400).json({ error: "No key file uploaded" });
-    }
-
-    // Parse uploaded key
-    const keyFile = JSON.parse(req.file.buffer.toString());
-
     const auth = new google.auth.GoogleAuth({
       credentials: keyFile,
       scopes: ["https://www.googleapis.com/auth/cloud-platform"],
@@ -43,7 +41,6 @@ exports.listBuckets = async (req, res) => {
             (b.members || []).includes("allAuthenticatedUsers")
         );
 
-        // ✅ Only push PUBLIC buckets
         if (isPublic) {
           publicBuckets.push({
             name: bucket.name,
@@ -54,28 +51,49 @@ exports.listBuckets = async (req, res) => {
           });
         }
       } catch (err) {
-        // Skip permission errors silently
         if (!err.message.includes("Permission")) {
           console.error(`Error checking bucket ${bucket.name}:`, err.message);
         }
       }
     }
 
-    // ✅ Response handling
     if (publicBuckets.length === 0) {
-      return res.json({
+      return {
+        success: true,
         projectId,
         message: "✅ No public buckets found. All buckets are private or restricted.",
         buckets: [],
-      });
+      };
     }
 
-    return res.json({
+    return {
+      success: true,
       projectId,
       buckets: publicBuckets,
-    });
+    };
   } catch (error) {
     console.error("Error listing buckets:", error);
+    return { success: false, error: "Failed to list buckets" };
+  }
+}
+
+/**
+ * 🌐 Express route version — keeps your existing API working
+ */
+exports.listBuckets = async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ error: "No key file uploaded" });
+    }
+
+    const keyFile = JSON.parse(req.file.buffer.toString());
+    const result = await analyzeBuckets(keyFile);
+    res.status(result.success ? 200 : 500).json(result);
+  } catch (err) {
+    console.error("Error in listBuckets route:", err);
     res.status(500).json({ error: "Failed to list buckets" });
   }
 };
+
+// ✅ Export both functions
+exports.analyzeBuckets = analyzeBuckets;

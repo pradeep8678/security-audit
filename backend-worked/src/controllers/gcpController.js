@@ -1,87 +1,3 @@
-// const fs = require("fs");
-// const { google } = require("googleapis");
-
-// exports.listVMs = async (req, res) => {
-//   try {
-//     if (!req.file) {
-//       return res.status(400).json({ error: "No key file uploaded" });
-//     }
-
-//     const keyPath = req.file.path;
-//     const keyFile = JSON.parse(fs.readFileSync(keyPath, "utf8"));
-
-//     const auth = new google.auth.GoogleAuth({
-//       credentials: keyFile,
-//       scopes: ["https://www.googleapis.com/auth/cloud-platform"],
-//     });
-
-//     const compute = google.compute({
-//       version: "v1",
-//       auth: await auth.getClient(),
-//     });
-
-//     const projectId = keyFile.project_id;
-
-//     // ✅ GET ALL AVAILABLE ZONES FOR THIS PROJECT
-//     const zoneData = await compute.zones.list({ project: projectId });
-
-//     // ✅ FILTER ONLY “UP” zones (Google’s real list for this project)
-//     const allowedZones = (zoneData.data.items || [])
-//       .filter(z => z.status === "UP")
-//       .map(z => z.name);
-
-//     console.log("✅ Dynamic zones:", allowedZones);
-
-//     const publicVMs = [];
-
-//     for (const zone of allowedZones) {
-//       try {
-//         console.log("🌍 Checking:", zone);
-
-//         const vmList = await compute.instances.list({
-//           project: projectId,
-//           zone,
-//         });
-
-//         const instances = vmList.data.items || [];
-
-//         instances.forEach(vm => {
-//           const nic = vm.networkInterfaces?.[0];
-//           const publicIP = nic?.accessConfigs?.[0]?.natIP;
-
-//           if (publicIP) {
-//             publicVMs.push({
-//               name: vm.name,
-//               zone,
-//               status: vm.status,
-//               machineType: vm.machineType?.split("/").pop(),
-//               internalIP: nic.networkIP,
-//               externalIP: publicIP,
-//             });
-//           }
-//         });
-//       } catch (err) {
-//         console.log(`⚠️ Zone skipped (${zone}):`, err.message);
-//       }
-//     }
-
-//     fs.unlinkSync(keyPath);
-
-//     res.json({
-//       message: "Public VMs listed successfully",
-//       projectId,
-//       totalPublicVMs: publicVMs.length,
-//       instances: publicVMs,
-//     });
-
-//   } catch (err) {
-//     console.error("❌ Error:", err);
-//     res.status(500).json({ error: err.message });
-//   }
-// };
-
-
-
 const { google } = require("googleapis");
 
 exports.listVMs = async (req, res) => {
@@ -90,10 +6,10 @@ exports.listVMs = async (req, res) => {
       return res.status(400).json({ error: "No key file uploaded" });
     }
 
-    //  Read key JSON directly from memory (no disk)
+    // Parse the uploaded key JSON file
     const keyFile = JSON.parse(req.file.buffer.toString("utf8"));
 
-    //  Authenticate with Google
+    // Authenticate with Google
     const auth = new google.auth.GoogleAuth({
       credentials: keyFile,
       scopes: ["https://www.googleapis.com/auth/cloud-platform"],
@@ -105,59 +21,68 @@ exports.listVMs = async (req, res) => {
     });
 
     const projectId = keyFile.project_id;
-
-    // Get all available zones dynamically (status: UP)
-    const zoneData = await compute.zones.list({ project: projectId });
-    const allowedZones = (zoneData.data.items || [])
-      .filter((z) => z.status === "UP")
-      .map((z) => z.name);
-
-    console.log("✅ Dynamic zones:", allowedZones);
-
     const publicVMs = [];
 
-    // Iterate zones & list instances
-    for (const zone of allowedZones) {
-      try {
-        console.log("🌍 Checking zone:", zone);
+    console.log(`🚀 Scanning all Compute Engine instances in project: ${projectId}`);
 
-        const vmList = await compute.instances.list({
-          project: projectId,
-          zone,
-        });
+    // Call aggregatedList once (includes all zones)
+    let request = compute.instances.aggregatedList({ project: projectId });
 
-        const instances = vmList.data.items || [];
+    while (request) {
+      const response = await request;
 
-        // Keep only VMs with public IPs
-        instances.forEach((vm) => {
-          const nic = vm.networkInterfaces?.[0];
-          const publicIP = nic?.accessConfigs?.[0]?.natIP;
-
-          if (publicIP) {
-            publicVMs.push({
-              name: vm.name,
-              zone,
-              status: vm.status,
-              machineType: vm.machineType?.split("/").pop(),
-              internalIP: nic?.networkIP,
-              externalIP: publicIP,
-            });
-          }
-        });
-      } catch (err) {
-        console.log(`⚠️ Zone skipped (${zone}):`, err.message);
+      if (!response || !response.data) {
+        console.warn("⚠️ Empty response received from aggregatedList.");
+        break;
       }
+
+      const items = response.data.items || {};
+
+      for (const [zone, scopedList] of Object.entries(items)) {
+        const instances = scopedList.instances || [];
+
+        instances.forEach((instance) => {
+          const name = instance.name;
+          const networkInterfaces = instance.networkInterfaces || [];
+
+          networkInterfaces.forEach((nic) => {
+            const accessConfigs = nic.accessConfigs || [];
+
+            accessConfigs.forEach((ac) => {
+              if (ac.natIP) {
+                publicVMs.push({
+                  name,
+                  zone,
+                  publicIP: ac.natIP,
+                  internalIP: nic.networkIP,
+                  machineType: instance.machineType?.split("/").pop(),
+                  status: instance.status,
+                });
+              }
+            });
+          });
+        });
+      }
+
+      // Pagination
+      request = response.data.nextPageToken
+        ? compute.instances.aggregatedList({
+            project: projectId,
+            pageToken: response.data.nextPageToken,
+          })
+        : null;
     }
 
-    //  Send results
+    console.log(`✅ Found ${publicVMs.length} VM(s) with public IPs.`);
+
     res.json({
-      message: "Public VMs listed successfully",
+      message: "Public VM audit completed successfully",
       projectId,
       totalPublicVMs: publicVMs.length,
       instances: publicVMs,
     });
   } catch (err) {
-    console.error("❌ Error:", err);
+    console.error("❌ Error in VM audit:", err);
     res.status(500).json({ error: err.message });
   }
 };

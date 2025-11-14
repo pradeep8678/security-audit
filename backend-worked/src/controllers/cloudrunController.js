@@ -1,13 +1,12 @@
 // src/controllers/lbController.js
 const { google } = require("googleapis");
 
-exports.scanCloudRunAndFunctions = async (req, res) => {
+/**
+ * 🔍 Pure reusable audit function (no Express res)
+ * Used by fullAuditController
+ */
+async function analyzeCloudRunAndFunctions(keyFile) {
   try {
-    if (!req.file) return res.status(400).json({ error: "Key file is required" });
-
-    const keyFileBuffer = req.file.buffer.toString("utf8");
-    const keyFile = JSON.parse(keyFileBuffer);
-
     const auth = new google.auth.GoogleAuth({
       credentials: keyFile,
       scopes: ["https://www.googleapis.com/auth/cloud-platform"],
@@ -16,7 +15,6 @@ exports.scanCloudRunAndFunctions = async (req, res) => {
     const projectId = keyFile.project_id;
     const cloudFunctions = google.cloudfunctions({ version: "v1", auth });
     const cloudRun = google.run({ version: "v1", auth });
-
     const results = [];
 
     // ---------------- Cloud Functions ----------------
@@ -33,9 +31,9 @@ exports.scanCloudRunAndFunctions = async (req, res) => {
         const url =
           fn.httpsTrigger?.url || `https://${region}-${projectId}.cloudfunctions.net/${name}`;
         const ingress = fn.ingressSettings || "N/A";
-        const auth = fn.httpsTrigger?.securityLevel || "N/A";
+        const authLevel = fn.httpsTrigger?.securityLevel || "N/A";
         const sa = fn.serviceAccountEmail || "N/A";
-        const unauthenticated = auth === "SECURE_OPTIONAL" ? "Yes" : "No";
+        const unauthenticated = authLevel === "SECURE_OPTIONAL" ? "Yes" : "No";
 
         const exposureRisk =
           ingress === "ALLOW_ALL" || unauthenticated === "Yes"
@@ -51,7 +49,7 @@ exports.scanCloudRunAndFunctions = async (req, res) => {
           runtime,
           url,
           ingress,
-          auth,
+          auth: authLevel,
           serviceAccount: sa,
           unauthenticated,
           exposureRisk,
@@ -138,9 +136,36 @@ exports.scanCloudRunAndFunctions = async (req, res) => {
       });
     }
 
-    res.json({ projectId, functionsAndRuns: results });
+    return { success: true, projectId, functionsAndRuns: results };
   } catch (error) {
     console.error("Scan Cloud Run & Function failed:", error);
-    res.status(500).json({ error: "Failed to scan Cloud Run & Functions", details: error.message });
+    return {
+      success: false,
+      error: "Failed to scan Cloud Run & Functions",
+      details: error.message,
+    };
+  }
+}
+
+/**
+ * 🌐 Express route handler — unchanged for your normal API
+ */
+exports.scanCloudRunAndFunctions = async (req, res) => {
+  try {
+    if (!req.file) return res.status(400).json({ error: "Key file is required" });
+
+    const keyFileBuffer = req.file.buffer.toString("utf8");
+    const keyFile = JSON.parse(keyFileBuffer);
+
+    const result = await analyzeCloudRunAndFunctions(keyFile);
+    res.status(result.success ? 200 : 500).json(result);
+  } catch (error) {
+    console.error("Scan Cloud Run & Function failed:", error);
+    res
+      .status(500)
+      .json({ error: "Failed to scan Cloud Run & Functions", details: error.message });
   }
 };
+
+// ✅ Export both
+exports.analyzeCloudRunAndFunctions = analyzeCloudRunAndFunctions;
