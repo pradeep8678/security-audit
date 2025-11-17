@@ -203,6 +203,12 @@ export default function FullAudit({ file }) {
       {error && <p className={styles.error}>{error}</p>}
 
       <div className={styles.selectorWrapper}>
+         <div
+          onClick={() => setSelectedResource(null)}
+          className={selectedResource === null ? styles.selectedChip : styles.chip}
+        >
+          All
+        </div>
         {resourceList.map((res) => (
           <div
             key={res}
@@ -213,12 +219,12 @@ export default function FullAudit({ file }) {
           </div>
         ))}
 
-        <div
+        {/* <div
           onClick={() => setSelectedResource(null)}
           className={selectedResource === null ? styles.selectedChip : styles.chip}
         >
           All
-        </div>
+        </div> */}
       </div>
       </div>
 

@@ -26,18 +26,7 @@ export default function SecurityAudit() {
         <div className="header-3col">
 
           {/* LEFT EMPTY SPACE */}
-          <div className="header-left"></div>
-
-          {/* CENTER TITLE */}
-          <div className="header-center">
-            <Header
-              title="GCP Security Audit Dashboard"
-              subtitle="Upload your GCP Service Account JSON once and run a full audit"
-            />
-          </div>
-
-          {/* RIGHT LOGO */}
-          <div className="header-right">
+            <div className="header-right">
             <a
               href="https://cloudambassadors.com/"
               target="_blank"
@@ -52,6 +41,19 @@ export default function SecurityAudit() {
                 playsInline
               />
             </a>
+          </div>
+
+          {/* CENTER TITLE */}
+          <div className="header-center">
+            <Header
+              title="GCP Security Audit Dashboard"
+              subtitle="Upload your GCP Service Account JSON once and run a full audit"
+            />
+          </div>
+
+          {/* RIGHT LOGO */}
+          <div className="header-right">
+           
           </div>
 
         </div>

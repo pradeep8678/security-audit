@@ -62,7 +62,7 @@ export default function FileDropZone({ file, onFile }) {
               ➜ Go to <em>IAM & Admin → Service Accounts</em><br />
               ➜ Click Create Service Account<br />
               ➜ Enter any name → Continue<br />
-              ➜Under Roles, add: Viewer<br />
+              ➜ Under Roles, add: Viewer<br />
               ➜ Click Done<br />
               ➜ Open the service account you created<br />
               ➜ Go to the <em>Keys</em> tab<br />
