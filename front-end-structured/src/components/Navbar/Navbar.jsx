@@ -1,40 +1,28 @@
+import { useLocation } from "react-router-dom";
 import styles from "./Navbar.module.css";
 import logo from "../../assets/cavideo2.mp4";
 
 export default function Navbar() {
+  const { pathname } = useLocation();
+
+  let title = "Security Audit Dashboard";
+
+  if (pathname.startsWith("/gcp")) title = "GCP Security Audit Dashboard";
+  if (pathname.startsWith("/aws")) title = "AWS Security Audit Dashboard";
+
   return (
     <nav className={styles.navbar}>
-      
-      {/* LEFT — Logo */}
       <div className={styles.left}>
-        <a
-          href="https://cloudambassadors.com/"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <video
-            src={logo}
-            className={styles.logo}
-            autoPlay
-            loop
-            muted
-            playsInline
-          />
-        </a>
+        <video src={logo} className={styles.logo} autoPlay loop muted />
       </div>
 
-      {/* CENTER — Brand Title */}
       <div className={styles.center}>
-        <h1 className={styles.brand}>GCP Security Audit Dashboard</h1>
+        <h1 className={styles.brand}>{title}</h1>
       </div>
 
-      {/* RIGHT — Menu Links */}
       <div className={styles.menu}>
-        <a className={styles.link}>Dashboard</a>
-        <a className={styles.link}>Audits</a>
-        <a className={styles.link}>Reports</a>
+        <a className={styles.link} href="/">Providers</a>
       </div>
-
     </nav>
   );
 }
