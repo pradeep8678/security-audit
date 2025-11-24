@@ -5,15 +5,27 @@ const cors = require('cors');
 const bodyParser = require('body-parser');
 
 // ✅ Import routes
-const gcpRoutes = require('./routes/gcp');          // for VM scanning
-const bucketRoutes = require('./routes/bucket');    // for bucket scanning
-const firewallRoutes = require('./routes/firewall');
-const sqlRoutes = require('./routes/sql'); 
-const gkeRoutes = require("./routes/gke");
-const ownerRoutes = require("./routes/owner");
-const lbRoutes = require("./routes/lbRoutes");
-const cloudrunRoutes = require("./routes/cloudrun");
-const fullAuditRoutes = require('./routes/fullAudit');
+const gcpRoutes = require('./gcp/routes/gcp');          // for VM scanning
+const bucketRoutes = require('./gcp/routes/bucket');    // for bucket scanning
+const firewallRoutes = require('./gcp/routes/firewall');
+const sqlRoutes = require('./gcp/routes/sql'); 
+const gkeRoutes = require("./gcp/routes/gke");
+const ownerRoutes = require("./gcp/routes/owner");
+const lbRoutes = require("./gcp/routes/lbRoutes");
+const cloudrunRoutes = require("./gcp/routes/cloudrun");
+const fullAuditRoutes = require('./gcp/routes/fullAudit');
+
+// -------------------------AWS--------------------------------------
+
+const ec2Route = require('./aws/routes/ec2Route');
+const s3Route = require('./aws/routes/s3Route');
+const eksRoute = require('./aws/routes/eksRoute');
+const iamRoute = require('./aws/routes/iamRoute');
+const appRunnerRoute = require('./aws/routes/appRunnerRoute');
+const rdsRoute = require('./aws/routes/rdsRoute');
+const awsfirewallRoute = require('./aws/routes/securityGroupRoute');
+const awslbRoute = require('./aws/routes/lbRoute');
+const awsfullAuditRoutes = require('./aws/routes/awsFullAuditRoute');
 
 // ✅ Confirm correct server loaded
 console.log("✅ server.js loaded from:", __dirname);
@@ -47,6 +59,18 @@ app.use("/api", ownerRoutes);
 app.use("/api", lbRoutes);
 app.use("/api", cloudrunRoutes);
 app.use('/api', fullAuditRoutes);
+
+// -------------------------AWS--------------------------------------
+
+app.use('/api', ec2Route);
+app.use('/api', s3Route);
+app.use('/api', eksRoute);
+app.use('/api', iamRoute);
+app.use('/api', appRunnerRoute);
+app.use('/api', rdsRoute);
+app.use('/api', awsfirewallRoute);
+app.use('/api', awslbRoute);
+app.use('/api', awsfullAuditRoutes);
 
 // ✅ 404 handler (optional)
 app.use((req, res) => {
