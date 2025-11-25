@@ -1,0 +1,78 @@
+.container {
+  max-width: 1000px;
+  margin: 120px auto;
+  color: white;
+}
+
+.title {
+  text-align: center;
+  font-size: 32px;
+  font-weight: 700;
+  margin-bottom: 40px;
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  margin-bottom: 30px;
+}
+
+.input {
+  padding: 14px;
+  font-size: 16px;
+  border-radius: 8px;
+  border: none;
+  outline: none;
+  background: rgba(255, 255, 255, 0.1);
+  color: white;
+}
+
+.button {
+  padding: 14px;
+  background: #0061ff;
+  color: white;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+  font-size: 18px;
+  transition: 0.25s;
+}
+
+.button:hover {
+  background: #2f7dff;
+}
+
+.error {
+  color: #ff6b6b;
+  font-size: 16px;
+  margin-top: 15px;
+}
+
+.resultsBox {
+  margin-top: 40px;
+}
+
+.resultsTitle {
+  font-size: 28px;
+  margin-bottom: 20px;
+}
+
+.card {
+  background: rgba(255,255,255,0.08);
+  padding: 20px;
+  border-radius: 10px;
+  margin-bottom: 15px;
+}
+
+.success {
+  color: #9cff9c;
+  font-size: 14px;
+  white-space: pre-wrap;
+}
+
+.errorBox {
+  color: #ff6b6b;
+  font-size: 14px;
+  white-space: pre-wrap;
+}

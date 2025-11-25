@@ -2,7 +2,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Navbar from "./components/Navbar/Navbar";
 import ProviderSelect from "./components/ProviderSelect/ProviderSelect";
 import SecurityAudit from "./pages/GCP/SecurityAudit.jsx";
-import AWSPage from "./pages/AWS/AWSPage.jsx";
+import AWSAudit from "./pages/AWS/AWSAudit.jsx";
 import ColorBends from "./components/Backgrounds/ColorBends/ColorBends";
 import "./styles/globals.css";
 
@@ -34,7 +34,7 @@ export default function App() {
           <Route path="/gcp" element={<SecurityAudit />} />
 
           {/* AWS */}
-          <Route path="/aws" element={<AWSPage />} />
+          <Route path="/aws" element={<AWSAudit />} />
         </Routes>
       </main>
     </BrowserRouter>
