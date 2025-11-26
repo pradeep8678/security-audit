@@ -7,14 +7,12 @@ exports.scanSecurityGroups = async (req, res) => {
   try {
     const { accessKeyId, secretAccessKey } = req.body;
 
-    // ❗ Validate input
     if (!accessKeyId || !secretAccessKey) {
       return res.status(400).json({
         error: "AWS accessKeyId and secretAccessKey are required",
       });
     }
 
-    // 🌍 All AWS regions supporting EC2
     const regions = [
       "us-east-1", "us-east-2",
       "us-west-1", "us-west-2",
@@ -44,6 +42,9 @@ exports.scanSecurityGroups = async (req, res) => {
         totalSecurityGroups += groups.length;
 
         for (const sg of groups) {
+          // Skip default security groups
+          if (sg.GroupName === "default") continue;
+
           const sgName = sg.GroupName;
           const sgId = sg.GroupId;
 
@@ -104,7 +105,6 @@ exports.scanSecurityGroups = async (req, res) => {
       }
     }
 
-    // ---------------- Response ----------------
     if (publicRules.length === 0) {
       return res.json({
         message: "✅ No public Security Group rules found in any region.",
