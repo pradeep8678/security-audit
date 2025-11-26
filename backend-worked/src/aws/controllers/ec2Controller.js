@@ -14,7 +14,7 @@ exports.listEC2Instances = async (req, res) => {
       });
     }
 
-    // Base client (used to fetch all regions)
+    // Base client for regions
     const baseClient = new EC2Client({
       region: "us-east-1",
       credentials: { accessKeyId, secretAccessKey }
@@ -26,9 +26,9 @@ exports.listEC2Instances = async (req, res) => {
 
     console.log("🌎 Scanning regions:", allRegions.join(", "));
 
-    let vulnerableInstances = [];
+    let allInstances = []; // <-- IMPORTANT
 
-    // Step 2 — Scan each region for EC2 instances
+    // Step 2 — Scan each region
     for (const region of allRegions) {
       const client = new EC2Client({
         region,
@@ -39,24 +39,28 @@ exports.listEC2Instances = async (req, res) => {
 
       try {
         const response = await client.send(new DescribeInstancesCommand({}));
-
         const reservations = response.Reservations || [];
 
         reservations.forEach((r) => {
           (r.Instances || []).forEach((instance) => {
             const publicIP = instance.PublicIpAddress;
 
-            if (publicIP) {
-              vulnerableInstances.push({
-                instanceId: instance.InstanceId,
-                region,
-                instanceType: instance.InstanceType,
-                publicIP,
-                privateIP: instance.PrivateIpAddress || null,
-                state: instance.State?.Name,
-                launchTime: instance.LaunchTime
-              });
-            }
+            allInstances.push({
+              instanceId: instance.InstanceId,
+              region,
+              instanceType: instance.InstanceType,
+              publicIp: publicIP || null,
+              privateIp: instance.PrivateIpAddress || null,
+              state: instance.State?.Name,
+
+              // 🚫 launchTime removed
+              // launchTime: instance.LaunchTime,
+
+              // ⭐ Correct recommendation
+              recommendation: publicIP
+                ? "⚠️ Instance exposed publicly — remove public IP or restrict inbound rules"
+                : "No public exposure detected"
+            });
           });
         });
       } catch (err) {
@@ -64,13 +68,14 @@ exports.listEC2Instances = async (req, res) => {
       }
     }
 
-    console.log(`✅ Found ${vulnerableInstances.length} public EC2 instances.`);
+    const publicCount = allInstances.filter(i => i.publicIp).length;
 
     return res.json({
       message: "AWS EC2 Public VM audit completed successfully",
       scannedRegions: allRegions.length,
-      totalPublicInstances: vulnerableInstances.length,
-      instances: vulnerableInstances
+      totalInstances: allInstances.length,
+      totalPublicInstances: publicCount,
+      instances: allInstances
     });
 
   } catch (error) {

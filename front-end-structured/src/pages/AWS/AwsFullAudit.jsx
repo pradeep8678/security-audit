@@ -1,8 +1,8 @@
 // src/pages/aws/AwsFullAudit.jsx
 import { useState } from "react";
 import { runAwsFullAudit } from "../../api/aws";
-import ExportToExcel from "../../components/Exports/ExportToExcel";
-import ExportToPDF from "../../components/Exports/ExportToPDF";
+import ExportToExcel from "../../components/Exports/ExportToExcelAws";
+import ExportToPDF from "../../components/Exports/ExportToPDFAWS";
 import styles from "../../styles/FullAudit.module.css";
 
 export default function AwsFullAudit({ credentials }) {
@@ -49,7 +49,6 @@ export default function AwsFullAudit({ credentials }) {
       );
 
       const normalized = {};
-
       data.results.forEach((item) => {
         if (item.success) normalized[item.name] = item.result;
         else normalized[item.name] = { error: item.error };
@@ -63,21 +62,34 @@ export default function AwsFullAudit({ credentials }) {
     setLoading(false);
   };
 
-  // 🔥 mapping to actual array fields from backend JSON
+  // Mapping backend → frontend
   const mapping = {
-    "EC2 Instances": "instances",        // result.instances
-    "S3 Buckets": "buckets",             // result.buckets
-    "Load Balancers": "loadBalancers",   // result.loadBalancers
-    "IAM Users & Roles": "adminUsers",   // result.adminUsers (array)
-    "Security Groups": "publicRules",    // result.publicRules (array)
-    "EKS Clusters": "clusters",          // result.clusters
-    "App Runner Services": "findings",   // result.findings
-    "RDS Databases": "instances",        // result.instances
+    "EC2 Instances": "instances",
+    "S3 Buckets": "buckets",
+    "Load Balancers": "loadBalancers",
+    "IAM Users & Roles": "adminUsers",
+    "Security Groups": "publicRules",
+    "EKS Clusters": "clusters",
+    "App Runner Services": "findings",
+    "RDS Databases": "instances",
   };
 
-  const renderTable = (items) => {
+  // UPDATED renderTable with EC2 modification
+  const renderTable = (items, name) => {
     if (!items || items.length === 0)
       return <p className={styles.noData}>No data available</p>;
+
+    // Customize EC2 table
+    if (name === "EC2 Instances") {
+      items = items.map((item) => {
+        const { launchTime, ...rest } = item; // remove launchTime
+        return {
+          ...rest,
+          recommendation:
+            item.recommendation || "No public exposure detected",
+        };
+      });
+    }
 
     const headers = Object.keys(items[0]);
 
@@ -122,7 +134,7 @@ export default function AwsFullAudit({ credentials }) {
     return (
       <div className={styles.card}>
         <h3 className={styles.cardTitle}>{name}</h3>
-        {renderTable(items)}
+        {renderTable(items, name)}
       </div>
     );
   };
