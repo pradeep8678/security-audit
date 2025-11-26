@@ -63,15 +63,16 @@ export default function AwsFullAudit({ credentials }) {
     setLoading(false);
   };
 
+  // 🔥 mapping to actual array fields from backend JSON
   const mapping = {
-    "EC2 Instances": "instances",
-    "S3 Buckets": "buckets",
-    "Load Balancers": "loadBalancers",
-    "IAM Users & Roles": "items",
-    "Security Groups": "groups",
-    "EKS Clusters": "clusters",
-    "App Runner Services": "services",
-    "RDS Databases": "databases",
+    "EC2 Instances": "instances",        // result.instances
+    "S3 Buckets": "buckets",             // result.buckets
+    "Load Balancers": "loadBalancers",   // result.loadBalancers
+    "IAM Users & Roles": "adminUsers",   // result.adminUsers (array)
+    "Security Groups": "publicRules",    // result.publicRules (array)
+    "EKS Clusters": "clusters",          // result.clusters
+    "App Runner Services": "findings",   // result.findings
+    "RDS Databases": "instances",        // result.instances
   };
 
   const renderTable = (items) => {
@@ -104,7 +105,6 @@ export default function AwsFullAudit({ credentials }) {
 
   const renderResource = (name) => {
     const res = result[name];
-
     if (!res) return null;
 
     if (res.error) {
@@ -117,11 +117,12 @@ export default function AwsFullAudit({ credentials }) {
     }
 
     const field = mapping[name];
+    const items = res[field];
 
     return (
       <div className={styles.card}>
         <h3 className={styles.cardTitle}>{name}</h3>
-        {renderTable(res[field])}
+        {renderTable(items)}
       </div>
     );
   };
@@ -181,7 +182,6 @@ export default function AwsFullAudit({ credentials }) {
         </div>
       </div>
 
-      {/* 🔥 FIXED MULTI-RENDER: ADDED KEY */}
       {selectedResource
         ? renderResource(selectedResource)
         : resourceList.map((res) => (
