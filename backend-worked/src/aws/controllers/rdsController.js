@@ -1,3 +1,4 @@
+// controllers/awsRdsController.js
 const {
   RDSClient,
   DescribeDBInstancesCommand,
@@ -13,7 +14,6 @@ exports.checkRdsPublicInstances = async (req, res) => {
       });
     }
 
-    // List of all AWS regions that support RDS
     const regions = [
       "us-east-1", "us-east-2", "us-west-1", "us-west-2",
       "ap-south-1", "ap-south-2", "ap-southeast-1", "ap-southeast-2",
@@ -30,10 +30,7 @@ exports.checkRdsPublicInstances = async (req, res) => {
     for (const region of regions) {
       const client = new RDSClient({
         region,
-        credentials: {
-          accessKeyId,
-          secretAccessKey,
-        },
+        credentials: { accessKeyId, secretAccessKey },
       });
 
       try {
@@ -47,11 +44,9 @@ exports.checkRdsPublicInstances = async (req, res) => {
               name: db.DBInstanceIdentifier,
               region,
               engine: db.Engine,
-              engineVersion: db.EngineVersion,
               instanceClass: db.DBInstanceClass,
               endpoint: db.Endpoint?.Address,
-              recommendation:
-                `⚠️ RDS instance "${db.DBInstanceIdentifier}" in ${region} is PUBLIC. Disable PubliclyAccessible immediately.`,
+              message: `⚠️ RDS instance "${db.DBInstanceIdentifier}" in ${region} is PUBLIC.`,
             });
           }
         }
@@ -60,7 +55,6 @@ exports.checkRdsPublicInstances = async (req, res) => {
       }
     }
 
-    // Response similar to your GCP version
     if (publicInstances.length === 0) {
       return res.json({
         message: "✅ No publicly accessible RDS instances found.",
@@ -72,8 +66,6 @@ exports.checkRdsPublicInstances = async (req, res) => {
 
   } catch (err) {
     console.error("Error checking RDS public access:", err);
-    return res.status(500).json({
-      error: "Failed to check RDS public instances",
-    });
+    return res.status(500).json({ error: "Failed to check RDS public instances" });
   }
 };

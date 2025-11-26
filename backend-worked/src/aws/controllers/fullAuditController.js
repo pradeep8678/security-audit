@@ -86,13 +86,13 @@ exports.runFullAwsAudit = async (req, res) => {
     // Run all AWS audits in parallel
     const results = await Promise.all([
       invokeAwsController("EC2 Instances", ec2Controller.listEC2Instances, credentials),
-      invokeAwsController("S3 Buckets", s3Controller.listAwsBuckets, credentials),
+      invokeAwsController("S3 Buckets", s3Controller.analyzeS3Buckets, credentials),
       invokeAwsController("Load Balancers", lbController.listAwsLoadBalancers, credentials),
-      invokeAwsController("IAM Users & Roles", iamController.listIamUsers, credentials),
-      invokeAwsController("Security Groups", sgController.auditSecurityGroups, credentials),
-      invokeAwsController("EKS Clusters", eksController.listEKSClusters, credentials),
-      invokeAwsController("App Runner Services", appRunnerController.listAppRunnerServices, credentials),
-      invokeAwsController("RDS Databases", rdsController.listRdsInstances, credentials),
+      invokeAwsController("IAM Users & Roles", iamController.analyzeAWSAdmins, credentials),
+      invokeAwsController("Security Groups", sgController.scanSecurityGroups, credentials),
+      invokeAwsController("EKS Clusters", eksController.analyzeEKSClusters, credentials),
+      invokeAwsController("App Runner Services", appRunnerController.analyzeAwsLambdaAndAppRunner, credentials),
+      invokeAwsController("RDS Databases", rdsController.checkRdsPublicInstances, credentials),
     ]);
 
     return res.status(200).json({
