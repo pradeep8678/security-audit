@@ -1,4 +1,5 @@
 // src/controllers/awsLbController.js
+
 const {
   LambdaClient,
   ListFunctionsCommand,
@@ -17,45 +18,59 @@ const {
 } = require("@aws-sdk/client-apprunner");
 
 /**
- * 🔍 Reusable AWS audit function — NO REGION INPUT
+ * 🔍 Main AWS audit function
  */
 async function analyzeAwsLambdaAndAppRunner(awsCredentials) {
   const { accessKeyId, secretAccessKey } = awsCredentials;
 
   try {
-    // -----------------------------------------------------------
-    // 1. Get ALL AWS regions dynamically
-    // -----------------------------------------------------------
+    // -------------------------------------------------------
+    // 1. Fetch all AWS regions dynamically
+    // -------------------------------------------------------
     const ec2 = new EC2Client({
-      region: "us-east-1", // EC2 is global enough to fetch regions
-      credentials: { accessKeyId, secretAccessKey },
+      region: "us-east-1",
+      credentials: awsCredentials,
     });
 
     const regionRes = await ec2.send(new DescribeRegionsCommand({}));
     const allRegions = regionRes.Regions.map((r) => r.RegionName);
 
-    const results = [];
+    const findings = [];
+    const activeAppRunnerRegions = [];
 
-    // -----------------------------------------------------------
-    // 2. Scan each region for Lambda & App Runner
-    // -----------------------------------------------------------
+    // -------------------------------------------------------
+    // 2. Detect ONLY regions where the user has App Runner apps
+    // -------------------------------------------------------
     for (const region of allRegions) {
-      console.log(`🔍 Scanning region: ${region}`);
+      try {
+        const appRunnerClient = new AppRunnerClient({
+          region,
+          credentials: awsCredentials,
+        });
 
-      // AWS clients for the region
+        const svcList = await appRunnerClient.send(
+          new ListServicesCommand({})
+        );
+
+        // Only mark region active if user actually deployed an App Runner service
+        if (svcList.ServiceSummaryList?.length > 0) {
+          activeAppRunnerRegions.push(region);
+        }
+
+      } catch (_) {
+        // Ignore "subscription needed" errors or regions where App Runner isn't enabled
+      }
+    }
+
+    // -------------------------------------------------------
+    // 3. First scan Lambda in all regions
+    // -------------------------------------------------------
+    for (const region of allRegions) {
       const lambdaClient = new LambdaClient({
         region,
-        credentials: { accessKeyId, secretAccessKey },
+        credentials: awsCredentials,
       });
 
-      const appRunnerClient = new AppRunnerClient({
-        region,
-        credentials: { accessKeyId, secretAccessKey },
-      });
-
-      // ============================
-      // 🟦 AWS Lambda Audit
-      // ============================
       try {
         const fnRes = await lambdaClient.send(new ListFunctionsCommand({}));
 
@@ -67,7 +82,7 @@ async function analyzeAwsLambdaAndAppRunner(awsCredentials) {
           let unauthenticated = "No";
           let authLevel = "Restricted";
 
-          // IAM Policy Check
+          // Check resource policy for public access
           try {
             const policyRes = await lambdaClient.send(
               new GetPolicyCommand({ FunctionName: name })
@@ -87,11 +102,12 @@ async function analyzeAwsLambdaAndAppRunner(awsCredentials) {
               unauthenticated = "Yes";
               authLevel = "Public";
             }
+
           } catch (_) {
-            // No resource-based policy = restricted
+            // No policy → it's private
           }
 
-          results.push({
+          findings.push({
             type: "AWS Lambda",
             region,
             name,
@@ -104,25 +120,34 @@ async function analyzeAwsLambdaAndAppRunner(awsCredentials) {
               "Remove public (“*”) permissions from Lambda resource policies.",
           });
         }
+
       } catch (err) {
-        results.push({
+        findings.push({
           type: "AWS Lambda",
           region,
           name: `Error: ${err.message}`,
           exposureRisk: "Unknown",
         });
       }
+    }
 
-      // ============================
-      // 🟦 AWS App Runner Audit
-      // ============================
+    // -------------------------------------------------------
+    // 4. Scan App Runner ONLY in regions that have services
+    // -------------------------------------------------------
+    for (const region of activeAppRunnerRegions) {
+      const appRunnerClient = new AppRunnerClient({
+        region,
+        credentials: awsCredentials,
+      });
+
       try {
-        const svcList = await appRunnerClient.send(new ListServicesCommand({}));
+        const svcList = await appRunnerClient.send(
+          new ListServicesCommand({})
+        );
 
         for (const svc of svcList.ServiceSummaryList || []) {
-          const serviceArn = svc.ServiceArn;
           const details = await appRunnerClient.send(
-            new DescribeServiceCommand({ ServiceArn: serviceArn })
+            new DescribeServiceCommand({ ServiceArn: svc.ServiceArn })
           );
 
           const service = details.Service;
@@ -132,21 +157,21 @@ async function analyzeAwsLambdaAndAppRunner(awsCredentials) {
               ? "Public"
               : "Internal";
 
-          results.push({
+          findings.push({
             type: "AWS App Runner",
             region,
             name: service.ServiceName,
-            arn: serviceArn,
+            arn: svc.ServiceArn,
             url: service.ServiceUrl,
             ingress,
             unauthenticated: ingress === "Public" ? "Yes" : "No",
             exposureRisk: ingress === "Public" ? "High" : "Low",
             recommendation:
-              "Use private App Runner services or enable VPC Ingress rather than public endpoints.",
+              "Use private App Runner endpoints by enabling VPC Ingress instead of public access.",
           });
         }
       } catch (err) {
-        results.push({
+        findings.push({
           type: "AWS App Runner",
           region,
           name: `Error: ${err.message}`,
@@ -159,8 +184,10 @@ async function analyzeAwsLambdaAndAppRunner(awsCredentials) {
       success: true,
       message: "AWS Lambda & App Runner scan completed",
       regionsScanned: allRegions,
-      findings: results,
+      appRunnerRegions: activeAppRunnerRegions, // <- real regions with apps
+      findings,
     };
+
   } catch (error) {
     return {
       success: false,
@@ -171,16 +198,16 @@ async function analyzeAwsLambdaAndAppRunner(awsCredentials) {
 }
 
 /**
- * 🌐 Express route — same as GCP style
+ * 🌐 Express route
  */
 exports.scanAwsLambdaAndAppRunner = async (req, res) => {
   try {
     const { accessKeyId, secretAccessKey } = req.body;
 
     if (!accessKeyId || !secretAccessKey) {
-      return res
-        .status(400)
-        .json({ error: "AWS accessKeyId and secretAccessKey are required" });
+      return res.status(400).json({
+        error: "AWS accessKeyId and secretAccessKey are required",
+      });
     }
 
     const result = await analyzeAwsLambdaAndAppRunner({
@@ -189,6 +216,7 @@ exports.scanAwsLambdaAndAppRunner = async (req, res) => {
     });
 
     res.status(result.success ? 200 : 500).json(result);
+
   } catch (err) {
     res.status(500).json({
       error: "AWS audit failed",
