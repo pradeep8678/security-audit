@@ -75,7 +75,7 @@ async function analyzeEKSClusters(credentials) {
     if (riskyClusters.length === 0) {
       return {
         success: true,
-        message: "✅ No publicly accessible or risky EKS clusters found.",
+        // message: "✅ No publicly accessible or risky EKS clusters found.",
         clusters: []
       };
     }

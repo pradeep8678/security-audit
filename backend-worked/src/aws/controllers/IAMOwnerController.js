@@ -104,7 +104,7 @@ async function analyzeAWSAdmins(credentials) {
 
     return {
       success: true,
-      totalAdmins: adminUsers.length + adminRoles.length,
+      // totalAdmins: adminUsers.length + adminRoles.length,
       adminUsers,
       adminRoles,
     };

@@ -87,7 +87,7 @@ async function analyzeS3Buckets(credentials) {
         publicBuckets.push({
           name: bucketName,
           status: "Public / Risky",
-          findings,
+          // findings,
           recommendation: "Enable S3 Block Public Access and remove any public ACLs or bucket policies."
 
         });
@@ -97,14 +97,14 @@ async function analyzeS3Buckets(credentials) {
     if (publicBuckets.length === 0) {
       return {
         success: true,
-        message: "✅ No publicly accessible S3 buckets found.",
+        // message: "✅ No publicly accessible S3 buckets found.",
         buckets: []
       };
     }
 
     return {
       success: true,
-      message: "⚠️ Public or risky S3 buckets detected.",
+      // message: "⚠️ Public or risky S3 buckets detected.",
       buckets: publicBuckets
     };
 

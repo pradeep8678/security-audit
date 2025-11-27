@@ -122,16 +122,16 @@ exports.scanSecurityGroups = async (req, res) => {
     if (riskyRules.length === 0) {
       return res.json({
         success: true,
-        totalSecurityGroups,
-        message: "✅ No publicly exposed Security Group rules found.",
+        // totalSecurityGroups,
+        // message: "✅ No publicly exposed Security Group rules found.",
         findings: [],
       });
     }
 
     return res.json({
       success: true,
-      totalSecurityGroups,
-      riskyRulesCount: riskyRules.length,
+      // totalSecurityGroups,
+      // riskyRulesCount: riskyRules.length,
       findings: riskyRules,
     });
 
