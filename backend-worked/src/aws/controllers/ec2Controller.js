@@ -66,7 +66,7 @@ exports.listEC2Instances = async (req, res) => {
     }
 
     return res.json({
-      totalPublicInstances: allPublicInstances.length,
+      // totalPublicInstances: allPublicInstances.length,
       instances: allPublicInstances
     });
 
