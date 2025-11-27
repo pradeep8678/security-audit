@@ -46,15 +46,16 @@ exports.listEC2Instances = async (req, res) => {
 
             // ❗ Only include PUBLIC instances
             if (publicIP) {
+              // Get Name tag
+              const instanceName = (instance.Tags || []).find(tag => tag.Key === "Name")?.Value || "N/A";
+
               allPublicInstances.push({
-                name: instanceName, 
+                name: instanceName,
                 region,
                 instanceType: instance.InstanceType,
                 publicIp: publicIP,
                 privateIp: instance.PrivateIpAddress || null,
-
-                // ⭐ Single-line recommendation
-                recommendation: `EC2 instance "${instance.InstanceId}" is publicly accessible — remove public IP if not needed, restrict 0.0.0.0/0 inbound rules, move to private subnet, or use bastion/SSM.`
+                recommendation: `EC2 instance "${instanceName}" is publicly accessible — remove public IP if not needed, restrict 0.0.0.0/0 inbound rules, move to private subnet, or use bastion/SSM.`
               });
             }
           });
@@ -65,9 +66,7 @@ exports.listEC2Instances = async (req, res) => {
     }
 
     return res.json({
-      // message: "AWS EC2 Public VM audit completed successfully",
-      // scannedRegions: allRegions.length,
-      // totalPublicInstances: allPublicInstances.length,
+      totalPublicInstances: allPublicInstances.length,
       instances: allPublicInstances
     });
 
