@@ -23,14 +23,16 @@ export default function AwsFullAudit({ credentials }) {
     "RDS Databases",
   ];
 
-  const readable = (value) => {
-    if (Array.isArray(value)) return value.map((v) => readable(v)).join(", ");
-    if (typeof value === "object" && value !== null)
-      return Object.entries(value)
-        .map(([k, v]) => `${k}: ${readable(v)}`)
-        .join(", ");
-    return value;
-  };
+const readable = (value) => {
+  if (typeof value === "boolean") return value ? "Yes" : "No";
+  if (Array.isArray(value)) return value.map((v) => readable(v)).join(", ");
+  if (typeof value === "object" && value !== null)
+    return Object.entries(value)
+      .map(([k, v]) => `${k}: ${readable(v)}`)
+      .join(", ");
+  return value;
+};
+
 
   const handleFullAudit = async () => {
     if (!credentials.accessKeyId || !credentials.secretAccessKey) {
@@ -54,6 +56,7 @@ export default function AwsFullAudit({ credentials }) {
         else normalized[item.name] = { error: item.error };
       });
 
+      console.log("Normalized line 57", normalized);
       setResult(normalized);
     } catch (err) {
       setError("AWS Full Audit Failed. Check console.");
@@ -62,6 +65,8 @@ export default function AwsFullAudit({ credentials }) {
     setLoading(false);
   };
 
+
+  
   const mapping = {
     "EC2 Instances": "instances",
     "S3 Buckets": "buckets",
@@ -74,6 +79,7 @@ export default function AwsFullAudit({ credentials }) {
   };
 
   const renderTable = (items, name) => {
+
     if (!items || items.length === 0)
       return <p className={styles.noData}>No security issues detected in this resource.</p>;
 
