@@ -67,7 +67,7 @@ export default function AwsFullAudit({ credentials }) {
     "S3 Buckets": "buckets",
     "Load Balancers": "loadBalancers",
     "IAM Users & Roles": "adminUsers",
-    "Security Groups": "publicRules",
+    "Security Groups": "findings",
     "EKS Clusters": "clusters",
     "App Runner Services": "findings",
     "RDS Databases": "instances",
@@ -76,16 +76,6 @@ export default function AwsFullAudit({ credentials }) {
   const renderTable = (items, name) => {
     if (!items || items.length === 0)
       return <p className={styles.noData}>No security issues detected in this resource.</p>;
-
-    if (name === "EC2 Instances") {
-      items = items.map((item) => {
-        const { launchTime, ...rest } = item;
-        return {
-          ...rest,
-          recommendation: item.recommendation || "No public exposure detected",
-        };
-      });
-    }
 
     const headers = Object.keys(items[0]);
 
@@ -111,6 +101,7 @@ export default function AwsFullAudit({ credentials }) {
     );
   };
 
+  // 🔥 FINAL COMPLETE RENDERER — Shows EVERYTHING
   const renderResource = (name) => {
     const res = result[name];
     if (!res) return null;
@@ -130,7 +121,39 @@ export default function AwsFullAudit({ credentials }) {
     return (
       <div className={styles.card}>
         <h3 className={styles.cardTitle}>{name}</h3>
-        {renderTable(items, name)}
+
+        {/* MAIN TABLE */}
+        {Array.isArray(items) && renderTable(items, name)}
+
+        {/* 🔥 Extra fields (message, counts, etc.) */}
+        {Object.entries(res).map(([k, v]) => {
+          if (k === field) return null;
+
+          // Number or string
+          if (typeof v === "number" || typeof v === "string") {
+            return (
+              <p key={k} className={styles.metaField}>
+                <b>{k}:</b> {v}
+              </p>
+            );
+          }
+
+          // Array
+          if (Array.isArray(v)) {
+            return (
+              <div key={k}>
+                <h4 className={styles.subHeading}>{k}</h4>
+                {v.length === 0 ? (
+                  <p className={styles.noData}>No items found</p>
+                ) : (
+                  renderTable(v, k)
+                )}
+              </div>
+            );
+          }
+
+          return null;
+        })}
       </div>
     );
   };
@@ -140,12 +163,7 @@ export default function AwsFullAudit({ credentials }) {
 
   return (
     <div className={styles.container}>
-      {/* 🔥 CONDITIONAL CSS APPLIED HERE */}
-      <div
-        className={
-          allDataLoaded ? styles.subbox : styles.subboxCompact
-        }
-      >
+      <div className={allDataLoaded ? styles.subbox : styles.subboxCompact}>
         <div className={styles.center}>
           <button
             onClick={handleFullAudit}
@@ -194,9 +212,7 @@ export default function AwsFullAudit({ credentials }) {
                 key={res}
                 onClick={() => setSelectedResource(res)}
                 className={
-                  selectedResource === res
-                    ? styles.selectedChip
-                    : styles.chip
+                  selectedResource === res ? styles.selectedChip : styles.chip
                 }
               >
                 {res}
