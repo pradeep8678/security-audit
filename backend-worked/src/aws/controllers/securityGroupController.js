@@ -26,7 +26,7 @@ exports.scanSecurityGroups = async (req, res) => {
       "me-south-1", "me-central-1"
     ];
 
-    const publicRules = [];
+    const riskyRules = [];
     let totalSecurityGroups = 0;
 
     for (const region of regions) {
@@ -42,86 +42,118 @@ exports.scanSecurityGroups = async (req, res) => {
         totalSecurityGroups += groups.length;
 
         for (const sg of groups) {
-          // Skip default security groups
+          // Ignore AWS-managed default security group
           if (sg.GroupName === "default") continue;
 
-          const sgName = sg.GroupName;
           const sgId = sg.GroupId;
+          const sgName = sg.GroupName;
 
-          // -------- INGRESS (Inbound Rules) --------
+          /** -------------------------------------------
+           * 🔥 INGRESS RULES (INBOUND)
+           * -------------------------------------------*/
           for (const rule of sg.IpPermissions || []) {
             const isPublic =
               (rule.IpRanges || []).some(r => r.CidrIp === "0.0.0.0/0") ||
               (rule.Ipv6Ranges || []).some(r => r.CidrIpv6 === "::/0");
 
             if (isPublic) {
-              publicRules.push({
+              riskyRules.push({
                 name: sgName,
                 id: sgId,
                 region,
                 direction: "INGRESS",
-                protocol: rule.IpProtocol,
-                ports:
-                  rule.FromPort === rule.ToPort
-                    ? rule.FromPort
-                    : `${rule.FromPort}-${rule.ToPort}`,
-                sourceRanges: [
+                severity: "HIGH",
+                protocol: rule.IpProtocol === "-1" ? "ALL" : rule.IpProtocol,
+                ports: getPortRange(rule),
+                sources: [
                   ...rule.IpRanges.map(r => r.CidrIp),
                   ...rule.Ipv6Ranges.map(r => r.CidrIpv6),
                 ],
-                recommendation: `⚠️ Security Group "${sgName}" (${sgId}) in ${region} allows public INGRESS. Restrict 0.0.0.0/0.`,
+                impact: "This allows anyone on the internet to reach your resources.",
+                recommendation: [
+                  `Remove 0.0.0.0/0 or ::/0 from inbound rules.`,
+                  `Limit access to specific IPs or corporate ranges.`,
+                  `Use VPN / Direct Connect / Security Groups referencing instead of public access.`,
+                  `If required temporarily, ensure logging & monitoring via VPC Flow Logs.`
+                ]
               });
             }
           }
 
-          // -------- EGRESS (Outbound Rules) --------
+          /** -------------------------------------------
+           * 🔥 EGRESS RULES (OUTBOUND)
+           * -------------------------------------------*/
           for (const rule of sg.IpPermissionsEgress || []) {
             const isPublic =
               (rule.IpRanges || []).some(r => r.CidrIp === "0.0.0.0/0") ||
               (rule.Ipv6Ranges || []).some(r => r.CidrIpv6 === "::/0");
 
             if (isPublic) {
-              publicRules.push({
+              riskyRules.push({
                 name: sgName,
                 id: sgId,
                 region,
                 direction: "EGRESS",
-                protocol: rule.IpProtocol,
-                ports:
-                  rule.FromPort === rule.ToPort
-                    ? rule.FromPort
-                    : `${rule.FromPort}-${rule.ToPort}`,
-                destinationRanges: [
+                severity: "MEDIUM",
+                protocol: rule.IpProtocol === "-1" ? "ALL" : rule.IpProtocol,
+                ports: getPortRange(rule),
+                destinations: [
                   ...rule.IpRanges.map(r => r.CidrIp),
                   ...rule.Ipv6Ranges.map(r => r.CidrIpv6),
                 ],
-                recommendation: `⚠️ Security Group "${sgName}" (${sgId}) in ${region} allows public EGRESS. Restrict if not required.`,
+                impact: "Instances can send traffic to any destination on the internet.",
+                recommendation: [
+                  `Restrict outbound traffic to required IPs or VPC CIDRs.`,
+                  `Block outgoing internet access unless explicitly needed.`,
+                  `Use VPC endpoints for AWS service access.`,
+                ]
               });
             }
           }
         }
       } catch (err) {
-        console.log(`Skipping region ${region}: ${err.message}`);
+        console.log(`⚠️ Skipping region ${region} → ${err.message}`);
       }
     }
 
-    if (publicRules.length === 0) {
+    /** --------------------------------------------------------
+     * 📌 Final Response
+     * --------------------------------------------------------*/
+    if (riskyRules.length === 0) {
       return res.json({
-        message: "✅ No public Security Group rules found in any region.",
-        publicRules: [],
+        success: true,
+        totalSecurityGroups,
+        message: "✅ No publicly exposed Security Group rules found.",
+        findings: [],
       });
     }
 
     return res.json({
+      success: true,
       totalSecurityGroups,
-      publicRulesCount: publicRules.length,
-      publicRules,
+      riskyRulesCount: riskyRules.length,
+      findings: riskyRules,
     });
+
   } catch (error) {
-    console.error("❌ Error scanning SG rules:", error);
+    console.error("❌ Error scanning security groups:", error);
     res.status(500).json({
       error: "Failed to scan security groups",
       details: error.message,
     });
   }
 };
+
+
+/** Utility: Format port range nicely */
+function getPortRange(rule) {
+  if (rule.IpProtocol === "-1") return "ALL PORTS";
+
+  if (rule.FromPort == null || rule.ToPort == null)
+    return "N/A";
+
+  if (rule.FromPort === rule.ToPort)
+    return `${rule.FromPort}`;
+
+  return `${rule.FromPort}-${rule.ToPort}`;
+}

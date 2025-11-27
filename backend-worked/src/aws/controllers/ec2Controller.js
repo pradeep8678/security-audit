@@ -14,7 +14,6 @@ exports.listEC2Instances = async (req, res) => {
       });
     }
 
-    // Base client for regions
     const baseClient = new EC2Client({
       region: "us-east-1",
       credentials: { accessKeyId, secretAccessKey }
@@ -26,7 +25,7 @@ exports.listEC2Instances = async (req, res) => {
 
     console.log("🌎 Scanning regions:", allRegions.join(", "));
 
-    let allInstances = []; // <-- IMPORTANT
+    let allPublicInstances = []; // ONLY PUBLIC INSTANCES
 
     // Step 2 — Scan each region
     for (const region of allRegions) {
@@ -41,26 +40,23 @@ exports.listEC2Instances = async (req, res) => {
         const response = await client.send(new DescribeInstancesCommand({}));
         const reservations = response.Reservations || [];
 
-        reservations.forEach((r) => {
-          (r.Instances || []).forEach((instance) => {
+        reservations.forEach(r => {
+          (r.Instances || []).forEach(instance => {
             const publicIP = instance.PublicIpAddress;
 
-            allInstances.push({
-              instanceId: instance.InstanceId,
-              region,
-              instanceType: instance.InstanceType,
-              publicIp: publicIP || null,
-              privateIp: instance.PrivateIpAddress || null,
-              state: instance.State?.Name,
+            // ❗ Only include PUBLIC instances
+            if (publicIP) {
+              allPublicInstances.push({
+                instanceId: instance.InstanceId,
+                region,
+                instanceType: instance.InstanceType,
+                publicIp: publicIP,
+                privateIp: instance.PrivateIpAddress || null,
 
-              // 🚫 launchTime removed
-              // launchTime: instance.LaunchTime,
-
-              // ⭐ Correct recommendation
-              recommendation: publicIP
-                ? "⚠️ Instance exposed publicly — remove public IP or restrict inbound rules"
-                : "No public exposure detected"
-            });
+                // ⭐ Single-line recommendation
+                recommendation: `EC2 instance "${instance.InstanceId}" is publicly accessible — remove public IP if not needed, restrict 0.0.0.0/0 inbound rules, move to private subnet, or use bastion/SSM.`
+              });
+            }
           });
         });
       } catch (err) {
@@ -68,14 +64,11 @@ exports.listEC2Instances = async (req, res) => {
       }
     }
 
-    const publicCount = allInstances.filter(i => i.publicIp).length;
-
     return res.json({
       message: "AWS EC2 Public VM audit completed successfully",
       scannedRegions: allRegions.length,
-      totalInstances: allInstances.length,
-      totalPublicInstances: publicCount,
-      instances: allInstances
+      totalPublicInstances: allPublicInstances.length,
+      instances: allPublicInstances
     });
 
   } catch (error) {

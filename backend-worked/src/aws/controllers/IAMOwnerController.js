@@ -71,7 +71,8 @@ async function analyzeAWSAdmins(credentials) {
         adminUsers.push({
           userName: user.UserName,
           type: "IAM_USER",
-          attachedPolicy: "AdministratorAccess (direct or via group)"
+          attachedPolicy: "AdministratorAccess (direct or via group)",
+          recommendation: `Limit IAM user "${user.UserName}" privileges — follow least privilege, avoid AdministratorAccess unless necessary, enable MFA.`
         });
       }
     }
@@ -95,7 +96,8 @@ async function analyzeAWSAdmins(credentials) {
         adminRoles.push({
           roleName: role.RoleName,
           type: "IAM_ROLE",
-          attachedPolicy: "AdministratorAccess"
+          attachedPolicy: "AdministratorAccess",
+          recommendation: `Limit IAM role "${role.RoleName}" privileges — use least privilege, avoid AdministratorAccess unless necessary, monitor usage.`
         });
       }
     }
@@ -104,7 +106,7 @@ async function analyzeAWSAdmins(credentials) {
       success: true,
       totalAdmins: adminUsers.length + adminRoles.length,
       adminUsers,
-      adminRoles
+      adminRoles,
     };
 
   } catch (err) {

@@ -60,7 +60,7 @@ async function analyzeAwsLoadBalancers({ accessKeyId, secretAccessKey }) {
 
         if (lbRes.LoadBalancers) {
           for (const lb of lbRes.LoadBalancers) {
-            let exposed = "Unknown";
+            let exposedToWorld = false;
 
             // Security Groups Check
             if (lb.SecurityGroups?.length > 0) {
@@ -71,26 +71,43 @@ async function analyzeAwsLoadBalancers({ accessKeyId, secretAccessKey }) {
                   })
                 );
 
-                const hasPublic = sgResp.SecurityGroups.some(sg =>
+                exposedToWorld = sgResp.SecurityGroups.some(sg =>
                   sg.IpPermissions.some(p =>
                     p.IpRanges.some(r => r.CidrIp === "0.0.0.0/0")
                   )
                 );
-
-                exposed = hasPublic ? "Yes" : "No";
               } catch (err) {
                 console.warn(`SG fetch failed in ${region}:`, err.message);
               }
             }
 
+            const isPublic = lb.Scheme === "internet-facing";
+
             results.push({
               region,
               name: lb.LoadBalancerName,
               dns: lb.DNSName,
-              type: lb.Type,
+              type: lb.Type.toUpperCase(),
               scheme: lb.Scheme,
-              is_public: lb.Scheme === "internet-facing" ? "Yes" : "No",
-              exposed_to_public: exposed
+              is_public: isPublic ? "Yes" : "No",
+              exposed_via_sg: exposedToWorld ? "Yes" : "No",
+              severity:
+                isPublic && exposedToWorld ? "HIGH" :
+                isPublic ? "MEDIUM" : "LOW",
+              issue:
+                isPublic && exposedToWorld
+                  ? "Load Balancer is internet-facing AND security group allows 0.0.0.0/0"
+                  : isPublic
+                  ? "Load Balancer is internet-facing"
+                  : "Internal Load Balancer",
+
+              // ✅ SINGLE-LINE RECOMMENDATION
+              recommendation:
+                isPublic && exposedToWorld
+                  ? "Restrict the security group (remove 0.0.0.0/0) and use internal load balancers for production."
+                  : isPublic
+                  ? "Restrict public access to trusted IPs only and attach AWS WAF to the load balancer."
+                  : "No action required; internal load balancer is correctly isolated."
             });
           }
         }
@@ -104,7 +121,7 @@ async function analyzeAwsLoadBalancers({ accessKeyId, secretAccessKey }) {
 
         if (clbRes.LoadBalancerDescriptions) {
           for (const clb of clbRes.LoadBalancerDescriptions) {
-            let exposed = "Unknown";
+            let exposedToWorld = false;
 
             try {
               const sgResp = await ec2.send(
@@ -113,23 +130,40 @@ async function analyzeAwsLoadBalancers({ accessKeyId, secretAccessKey }) {
                 })
               );
 
-              const hasPublic = sgResp.SecurityGroups.some(sg =>
+              exposedToWorld = sgResp.SecurityGroups.some(sg =>
                 sg.IpPermissions.some(p =>
                   p.IpRanges.some(r => r.CidrIp === "0.0.0.0/0")
                 )
               );
-
-              exposed = hasPublic ? "Yes" : "No";
             } catch {}
+
+            const isPublic = clb.Scheme === "internet-facing";
 
             results.push({
               region,
               name: clb.LoadBalancerName,
               dns: clb.DNSName,
-              type: "classic",
+              type: "CLASSIC",
               scheme: clb.Scheme,
-              is_public: clb.Scheme === "internet-facing" ? "Yes" : "No",
-              exposed_to_public: exposed
+              is_public: isPublic ? "Yes" : "No",
+              exposed_via_sg: exposedToWorld ? "Yes" : "No",
+              severity:
+                isPublic && exposedToWorld ? "HIGH" :
+                isPublic ? "MEDIUM" : "LOW",
+              issue:
+                isPublic && exposedToWorld
+                  ? "Classic Load Balancer is internet-facing AND security group exposes it to 0.0.0.0/0"
+                  : isPublic
+                  ? "Classic Load Balancer is internet-facing"
+                  : "Internal Classic Load Balancer",
+
+              // ✅ SINGLE-LINE RECOMMENDATION
+              recommendation:
+                isPublic && exposedToWorld
+                  ? "Restrict SG inbound access (avoid 0.0.0.0/0) and migrate CLB to ALB/NLB."
+                  : isPublic
+                  ? "Limit public access to trusted IPs only and move away from Classic ELB."
+                  : "No action needed; CLB is internal."
             });
           }
         }
@@ -144,7 +178,6 @@ async function analyzeAwsLoadBalancers({ accessKeyId, secretAccessKey }) {
     return { success: false, error: "Failed to analyze AWS Load Balancers" };
   }
 }
-
 
 
 // ------------------------------------------------------
