@@ -111,6 +111,7 @@ export default function AwsFullAudit({ credentials }) {
     );
   };
 
+  // 🔥 NEW UPDATED LOGIC → Automatically show ALL additional fields (messages, counts, arrays)
   const renderResource = (name) => {
     const res = result[name];
     if (!res) return null;
@@ -130,7 +131,39 @@ export default function AwsFullAudit({ credentials }) {
     return (
       <div className={styles.card}>
         <h3 className={styles.cardTitle}>{name}</h3>
-        {renderTable(items, name)}
+
+        {/* Main Table */}
+        {Array.isArray(items) && renderTable(items, name)}
+
+        {/* 🔥 Auto-show all other fields (metadata, messages, secondary arrays) */}
+        {Object.entries(res).map(([key, val]) => {
+          if (key === field) return null;
+
+          // Show numbers or strings
+          if (typeof val === "string" || typeof val === "number") {
+            return (
+              <p key={key} className={styles.metaField}>
+                <b>{key}:</b> {val}
+              </p>
+            );
+          }
+
+          // Show arrays other than main array
+          if (Array.isArray(val)) {
+            return (
+              <div key={key}>
+                <h4 className={styles.subHeading}>{key}</h4>
+                {val.length === 0 ? (
+                  <p className={styles.noData}>No items found.</p>
+                ) : (
+                  renderTable(val, key)
+                )}
+              </div>
+            );
+          }
+
+          return null;
+        })}
       </div>
     );
   };
@@ -140,12 +173,7 @@ export default function AwsFullAudit({ credentials }) {
 
   return (
     <div className={styles.container}>
-      {/* 🔥 CONDITIONAL CSS APPLIED HERE */}
-      <div
-        className={
-          allDataLoaded ? styles.subbox : styles.subboxCompact
-        }
-      >
+      <div className={allDataLoaded ? styles.subbox : styles.subboxCompact}>
         <div className={styles.center}>
           <button
             onClick={handleFullAudit}
