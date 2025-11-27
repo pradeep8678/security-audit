@@ -47,7 +47,7 @@ exports.listEC2Instances = async (req, res) => {
             // ❗ Only include PUBLIC instances
             if (publicIP) {
               allPublicInstances.push({
-                instanceId: instance.InstanceId,
+                name: instanceName, 
                 region,
                 instanceType: instance.InstanceType,
                 publicIp: publicIP,
@@ -65,9 +65,9 @@ exports.listEC2Instances = async (req, res) => {
     }
 
     return res.json({
-      message: "AWS EC2 Public VM audit completed successfully",
-      scannedRegions: allRegions.length,
-      totalPublicInstances: allPublicInstances.length,
+      // message: "AWS EC2 Public VM audit completed successfully",
+      // scannedRegions: allRegions.length,
+      // totalPublicInstances: allPublicInstances.length,
       instances: allPublicInstances
     });
 

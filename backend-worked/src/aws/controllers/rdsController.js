@@ -61,14 +61,14 @@ exports.checkRdsPublicInstances = async (req, res) => {
     if (publicInstances.length === 0) {
       return res.json({
         success: true,
-        message: "✅ No publicly accessible RDS instances found.",
+        // message: "✅ No publicly accessible RDS instances found.",
         instances: [],
       });
     }
 
     return res.json({
       success: true,
-      message: "⚠️ Public RDS instances detected.",
+      // message: "⚠️ Public RDS instances detected.",
       instances: publicInstances,
     });
 

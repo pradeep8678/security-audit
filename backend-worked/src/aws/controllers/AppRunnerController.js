@@ -176,8 +176,8 @@ async function analyzeAwsLambdaAndAppRunner(awsCredentials) {
     // -------------------------------------------------------
     return {
       success: true,
-      message: "AWS Lambda & App Runner audit completed",
-      regionsScanned: allRegions,
+      // message: "AWS Lambda & App Runner audit completed",
+      // regionsScanned: allRegions,
       appRunnerRegions: activeAppRunnerRegions,
       findings,
     };
