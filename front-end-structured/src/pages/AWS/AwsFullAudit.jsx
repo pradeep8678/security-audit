@@ -62,7 +62,6 @@ export default function AwsFullAudit({ credentials }) {
     setLoading(false);
   };
 
-  // Mapping backend → frontend
   const mapping = {
     "EC2 Instances": "instances",
     "S3 Buckets": "buckets",
@@ -74,19 +73,16 @@ export default function AwsFullAudit({ credentials }) {
     "RDS Databases": "instances",
   };
 
-  // UPDATED renderTable with EC2 modification
   const renderTable = (items, name) => {
     if (!items || items.length === 0)
-      return <p className={styles.noData}>No data available</p>;
+      return <p className={styles.noData}>No security issues detected in this resource.</p>;
 
-    // Customize EC2 table
     if (name === "EC2 Instances") {
       items = items.map((item) => {
-        const { launchTime, ...rest } = item; // remove launchTime
+        const { launchTime, ...rest } = item;
         return {
           ...rest,
-          recommendation:
-            item.recommendation || "No public exposure detected",
+          recommendation: item.recommendation || "No public exposure detected",
         };
       });
     }
@@ -139,9 +135,17 @@ export default function AwsFullAudit({ credentials }) {
     );
   };
 
+  const allDataLoaded =
+    Object.keys(result).length === resourceList.length && !loading;
+
   return (
     <div className={styles.container}>
-      <div className={styles.subbox}>
+      {/* 🔥 CONDITIONAL CSS APPLIED HERE */}
+      <div
+        className={
+          allDataLoaded ? styles.subbox : styles.subboxCompact
+        }
+      >
         <div className={styles.center}>
           <button
             onClick={handleFullAudit}
@@ -151,7 +155,7 @@ export default function AwsFullAudit({ credentials }) {
             {loading ? "Running..." : "Run Full AWS Audit"}
           </button>
 
-          {Object.keys(result).length > 0 && (
+          {allDataLoaded && (
             <div className={styles.dropdownWrapper}>
               <button
                 onClick={() => setShowDropdown(!showDropdown)}
@@ -172,33 +176,42 @@ export default function AwsFullAudit({ credentials }) {
 
         {error && <p className={styles.error}>{error}</p>}
 
-        <div className={styles.selectorWrapper}>
-          <div
-            onClick={() => setSelectedResource(null)}
-            className={selectedResource === null ? styles.selectedChip : styles.chip}
-          >
-            All
-          </div>
-
-          {resourceList.map((res) => (
+        {allDataLoaded && (
+          <div className={styles.selectorWrapper}>
             <div
-              key={res}
-              onClick={() => setSelectedResource(res)}
+              onClick={() => setSelectedResource(null)}
               className={
-                selectedResource === res ? styles.selectedChip : styles.chip
+                selectedResource === null
+                  ? styles.selectedChip
+                  : styles.chip
               }
             >
-              {res}
+              All
             </div>
-          ))}
-        </div>
+
+            {resourceList.map((res) => (
+              <div
+                key={res}
+                onClick={() => setSelectedResource(res)}
+                className={
+                  selectedResource === res
+                    ? styles.selectedChip
+                    : styles.chip
+                }
+              >
+                {res}
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
-      {selectedResource
-        ? renderResource(selectedResource)
-        : resourceList.map((res) => (
-            <div key={res}>{renderResource(res)}</div>
-          ))}
+      {allDataLoaded &&
+        (selectedResource
+          ? renderResource(selectedResource)
+          : resourceList.map((res) => (
+              <div key={res}>{renderResource(res)}</div>
+            )))}
     </div>
   );
 }
