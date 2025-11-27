@@ -101,7 +101,7 @@ export default function AwsFullAudit({ credentials }) {
     );
   };
 
-  // 🔥 FINAL COMPLETE RENDERER — Shows EVERYTHING
+  // ⭐ FINAL CLEAN RENDERER — FIXED COMPLETELY
   const renderResource = (name) => {
     const res = result[name];
     if (!res) return null;
@@ -125,12 +125,22 @@ export default function AwsFullAudit({ credentials }) {
         {/* MAIN TABLE */}
         {Array.isArray(items) && renderTable(items, name)}
 
-        {/* 🔥 Extra fields (message, counts, etc.) */}
+        {/* Extra fields */}
         {Object.entries(res).map(([k, v]) => {
+          // ❌ Do not show main field again
           if (k === field) return null;
 
-          // Number or string
-          if (typeof v === "number" || typeof v === "string") {
+          // ❌ EXCLUDE adminRoles
+          if (name === "IAM Users & Roles" && k === "adminRoles") return null;
+
+          // ❌ EXCLUDE EKS totalRiskyClusters
+          if (name === "EKS Clusters" && k === "totalRiskyClusters") return null;
+
+          // ❌ Do not show empty arrays
+          if (Array.isArray(v) && v.length === 0) return null;
+
+          // Show number / string
+          if (typeof v === "string" || typeof v === "number") {
             return (
               <p key={k} className={styles.metaField}>
                 <b>{k}:</b> {v}
@@ -138,16 +148,12 @@ export default function AwsFullAudit({ credentials }) {
             );
           }
 
-          // Array
+          // Show extra arrays
           if (Array.isArray(v)) {
             return (
               <div key={k}>
                 <h4 className={styles.subHeading}>{k}</h4>
-                {v.length === 0 ? (
-                  <p className={styles.noData}>No items found</p>
-                ) : (
-                  renderTable(v, k)
-                )}
+                {renderTable(v, k)}
               </div>
             );
           }
@@ -199,9 +205,7 @@ export default function AwsFullAudit({ credentials }) {
             <div
               onClick={() => setSelectedResource(null)}
               className={
-                selectedResource === null
-                  ? styles.selectedChip
-                  : styles.chip
+                selectedResource === null ? styles.selectedChip : styles.chip
               }
             >
               All
