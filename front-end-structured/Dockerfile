@@ -3,23 +3,20 @@ FROM node:18 AS builder
 
 WORKDIR /app
 
-# Copy package files
 COPY package*.json ./
-
-# Install ALL dependencies including dev tools (Vite)
 RUN npm ci --include=dev
 
-# Copy the rest of the code
 COPY . .
-
-# Run Vite build using full binary path
-RUN node ./node_modules/vite/bin/vite.js build
+RUN npm run build
 
 # Step 2: Serve using NGINX
 FROM nginx:alpine
 
-# Copy built files to nginx
+ENV PORT=8080
+
+COPY nginx.conf /etc/nginx/nginx.conf
 COPY --from=builder /app/dist /usr/share/nginx/html
 
-EXPOSE 80
+EXPOSE 8080
+
 CMD ["nginx", "-g", "daemon off;"]
