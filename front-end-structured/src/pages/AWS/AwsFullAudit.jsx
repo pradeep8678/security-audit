@@ -182,7 +182,7 @@ const readable = (value) => {
             disabled={loading}
             className={loading ? styles.btnDisabled : styles.btnPrimary}
           >
-            {loading ? "Running..." : "Run Full AWS Audit"}
+            {loading ? "Running..." : "Run AWS Audit"}
           </button>
 
           {allDataLoaded && (
