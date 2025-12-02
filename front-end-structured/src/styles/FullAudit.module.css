@@ -30,12 +30,23 @@
     letter-spacing: -0.5px;
 }
 
-.subheading {
+/* .subheading {
     text-align: center;
     color: #666;
     font-size: 18px;
     margin-bottom: 30px;
+} */
+
+.subHeading {
+  font-size: 20px;
+  font-weight: 700;
+  margin-top: 25px;
+  margin-bottom: 10px;
+  color: #1a73e8; /* Google Blue */
+  border-left: 4px solid #1a73e8;
+  padding-left: 10px;
 }
+
 
 /* ------------------------------ */
 /* BUTTONS                        */

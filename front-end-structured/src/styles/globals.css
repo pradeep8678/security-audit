@@ -25,3 +25,24 @@ body {
   padding: 20px;
   height: 100%;
 }
+
+
+.ag-theme-quartz .ag-header {
+  background: #f2f6ff !important;
+}
+
+.ag-theme-quartz .ag-header-cell-label {
+  font-weight: 700 !important;
+  color: #1a73e8 !important; /* Google blue */
+  font-size: 14px !important;
+}
+
+.ag-theme-quartz .ag-header-cell {
+  border-right: 1px solid #d6e2ff !important;
+}
+
+.ag-theme-quartz .ag-root-wrapper {
+  border-radius: 10px !important;
+  border: 1px solid #e0e7ff !important;
+  overflow: hidden;
+}

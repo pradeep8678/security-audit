@@ -1,4 +1,11 @@
 const { google } = require("googleapis");
+const checkDefaultServiceAccount = require("./vmRules/defaultServiceAccount"); 
+const checkShieldedVM = require("./vmRules/shieldedVmCheck");
+const checkOsLogin = require("./vmRules/osLoginCheck");
+const checkBlockProjectSSHKeys = require("./vmRules/blockProjectSshKeysCheck");
+const checkIpForwarding = require("./vmRules/ipForwardingCheck");
+
+
 
 exports.listVMs = async (req, res) => {
   try {
@@ -6,10 +13,10 @@ exports.listVMs = async (req, res) => {
       return res.status(400).json({ error: "No key file uploaded" });
     }
 
-    // Parse the uploaded key JSON file
+    // Parse uploaded key JSON
     const keyFile = JSON.parse(req.file.buffer.toString("utf8"));
 
-    // Authenticate with Google
+    // Authenticate
     const auth = new google.auth.GoogleAuth({
       credentials: keyFile,
       scopes: ["https://www.googleapis.com/auth/cloud-platform"],
@@ -21,42 +28,52 @@ exports.listVMs = async (req, res) => {
     });
 
     const projectId = keyFile.project_id;
-    const publicVMs = [];
 
-    console.log(`🚀 Scanning all Compute Engine instances in project: ${projectId}`);
+    console.log(`🚀 Scanning Compute Engine instances for project: ${projectId}`);
 
-    // Call aggregatedList once (includes all zones)
+    // Fetch Project Metadata (needed for OS Login rule)
+    const projectInfo = await compute.projects.get({ project: projectId });
+    const projectMetadata = projectInfo.data.commonInstanceMetadata || {};
+
     let request = compute.instances.aggregatedList({ project: projectId });
+
+    const allVMs = [];
+    const publicVMs = [];
 
     while (request) {
       const response = await request;
-
-      if (!response || !response.data) {
-        console.warn("⚠️ Empty response received from aggregatedList.");
-        break;
-      }
-
       const items = response.data.items || {};
 
       for (const [zone, scopedList] of Object.entries(items)) {
         const instances = scopedList.instances || [];
 
         instances.forEach((instance) => {
-          const name = instance.name;
-          const networkInterfaces = instance.networkInterfaces || [];
+          const vmData = {
+            name: instance.name,
+            zone,
+            machineType: instance.machineType?.split("/").pop(),
+            status: instance.status,
+            serviceAccounts: instance.serviceAccounts || [],
+            networkInterfaces: instance.networkInterfaces || [],
+            shieldedVMConfig: instance.shieldedInstanceConfig || {},
+            metadataItems: instance.metadata?.items || [],
+            canIpForward: instance.canIpForward || false 
+            
+          };
 
-          networkInterfaces.forEach((nic) => {
-            const accessConfigs = nic.accessConfigs || [];
+          allVMs.push(vmData);
 
-            accessConfigs.forEach((ac) => {
+          // Public IP detection
+          instance.networkInterfaces?.forEach((nic) => {
+            nic.accessConfigs?.forEach((ac) => {
               if (ac.natIP) {
                 publicVMs.push({
-                  name,
+                  name: instance.name,
                   zone,
                   publicIP: ac.natIP,
                   internalIP: nic.networkIP,
-                  machineType: instance.machineType?.split("/").pop(),
-                  status: instance.status,
+                  machineType: vmData.machineType,
+                  status: vmData.status,
                 });
               }
             });
@@ -64,7 +81,6 @@ exports.listVMs = async (req, res) => {
         });
       }
 
-      // Pagination
       request = response.data.nextPageToken
         ? compute.instances.aggregatedList({
             project: projectId,
@@ -73,16 +89,38 @@ exports.listVMs = async (req, res) => {
         : null;
     }
 
-    console.log(`✅ Found ${publicVMs.length} VM(s) with public IPs.`);
+    console.log(`✔️ Public IP VMs: ${publicVMs.length}`);
+    console.log(`✔️ Total VMs scanned: ${allVMs.length}`);
 
-    res.json({
-      message: "Public VM audit completed successfully",
+    // RULE EXECUTION
+    const defaultSAResults = checkDefaultServiceAccount(allVMs);
+    const shieldedVmResults = checkShieldedVM(allVMs);
+    const osLoginResults = checkOsLogin(allVMs, projectMetadata);
+        const blockProjectSshKeysResults = checkBlockProjectSSHKeys(allVMs, projectMetadata);
+        const ipForwardingResults = checkIpForwarding(allVMs);
+
+
+
+    // FINAL RESPONSE (Option C)
+    return res.json({
+      message: "VM audit completed successfully",
       projectId,
-      totalPublicVMs: publicVMs.length,
-      instances: publicVMs,
+      vmScan: {
+        publicIpScan: {
+          totalPublicVMs: publicVMs.length,
+          instances: publicVMs,
+          status: publicVMs.length > 0 ? "FAIL" : "PASS",
+        },
+        defaultServiceAccountScan: defaultSAResults,
+        shieldedVmProtectionScan: shieldedVmResults,
+        osLoginEnforcementScan: osLoginResults,
+        blockProjectWideSshKeysScan: blockProjectSshKeysResults,
+        ipForwardingScan: ipForwardingResults 
+      },
     });
+
   } catch (err) {
     console.error("❌ Error in VM audit:", err);
-    res.status(500).json({ error: err.message });
+    return res.status(500).json({ error: err.message });
   }
 };
