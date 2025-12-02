@@ -8,20 +8,35 @@ ModuleRegistry.registerModules([AllCommunityModule]);
 export default function AgTable({ rowData, columnDefs, height = 400 }) {
   return (
     <div
-      className="ag-theme-quartz"
       style={{
-        height,
         width: "100%",
-        borderRadius: "8px",
-        overflow: "hidden",
+        overflowX: "auto",
+        overflowY: "hidden",
       }}
     >
-      <AgGridReact
-        rowData={rowData}
-        columnDefs={columnDefs}
-         domLayout="autoHeight"
-        animateRows={true}
-      />
+      <div
+        className="ag-theme-quartz ag-scroll-inner"
+        style={{
+          minWidth: "100%",
+          width: "max-content",
+          borderRadius: "8px",
+        }}
+      >
+        <AgGridReact
+          rowData={rowData}
+          columnDefs={columnDefs}
+          domLayout="autoHeight"
+          animateRows={true}
+          suppressRowClickSelection={true}
+          enableCellTextSelection={true}     // 🔥 copy/paste allowed
+          defaultColDef={{
+            sortable: true,
+            filter: true,
+            resizable: true,
+            minWidth: 250,
+          }}
+        />
+      </div>
     </div>
   );
 }

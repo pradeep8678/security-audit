@@ -29,7 +29,7 @@ module.exports = function checkShieldedVM(instances) {
           integrityMonitoringEnabled: integrityMonitoring
         },
         recommendation:
-          "Enable all Shielded VM features (Secure Boot, vTPM, Integrity Monitoring) for maximum protection."
+          "⚠️ Enable all Shielded VM features (Secure Boot, vTPM, Integrity Monitoring) for maximum protection."
       });
     }
   });

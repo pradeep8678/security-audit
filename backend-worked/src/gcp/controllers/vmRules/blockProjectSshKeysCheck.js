@@ -58,7 +58,7 @@ module.exports = function checkBlockProjectSSHKeys(instances, projectMetadata) {
         status: vm.status,
         blockProjectSshKeys: "Not Enabled",
         recommendation:
-          "Enable 'Block Project-Wide SSH Keys' in VM metadata to prevent unintended SSH access from inherited project keys.",
+          "⚠️ Enable 'Block Project-Wide SSH Keys' in VM metadata to prevent unintended SSH access from inherited project keys.",
       });
     }
   });

@@ -26,7 +26,7 @@ module.exports = function checkDefaultServiceAccount(instances) {
         status: vm.status,
         serviceAccount: attachedSA,
         recommendation:
-          "Assign a custom service account with least-privilege IAM permissions instead of using the default one."
+          "⚠️ Assign a custom service account with least-privilege IAM permissions instead of using the default one."
       });
     }
   });
@@ -39,7 +39,7 @@ module.exports = function checkDefaultServiceAccount(instances) {
     totalAffected: riskyInstances.length,
     affectedInstances: riskyInstances,
     recommendation:
-      "Create and attach a custom service account with restricted IAM roles to each VM.",
+      "⚠️ Create and attach a custom service account with restricted IAM roles to each VM.",
     status: riskyInstances.length > 0 ? "FAIL" : "PASS",
     humanReadableStatus:
       riskyInstances.length > 0

@@ -51,7 +51,7 @@ module.exports = function checkOsLogin(instances, projectMetadata) {
         status: vm.status,
         osLoginStatus: "Disabled (Not Enforced)",
         recommendation:
-          "Enable OS Login to enforce IAM-based SSH access and eliminate unmanaged SSH keys."
+          "⚠️ Enable OS Login to enforce IAM-based SSH access and eliminate unmanaged SSH keys."
       });
     }
   });

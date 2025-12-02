@@ -388,3 +388,22 @@
 .subboxCompact .dropdownWrapper {
     display: none !important;
 }
+
+
+.ag-scroll-inner::-webkit-scrollbar {
+  height: 8px;
+}
+
+.ag-scroll-inner::-webkit-scrollbar-track {
+  background: #eef1ff;
+  border-radius: 10px;
+}
+
+.ag-scroll-inner::-webkit-scrollbar-thumb {
+  background: #9caafd;
+  border-radius: 10px;
+}
+
+.ag-scroll-inner::-webkit-scrollbar-thumb:hover {
+  background: #6e7dfc;
+}

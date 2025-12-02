@@ -233,28 +233,54 @@ import styles from "../../styles/FullAudit.module.css";
 const generateColumnDefs = (data = []) => {
   if (!data.length) return [];
 
-  // Collect all unique keys across all rows
   const allKeys = new Set();
-  data.forEach((row) => {
-    Object.keys(row).forEach((key) => allKeys.add(key));
-  });
+  data.forEach((row) => Object.keys(row).forEach((key) => allKeys.add(key)));
 
-  // Generate AG Grid column definitions
   return [...allKeys].map((key) => ({
     headerName: key.replace(/([A-Z])/g, " $1").replace(/_/g, " ").toUpperCase(),
     field: key,
-    flex: 1,
+    minWidth: 180,
     sortable: true,
     filter: true,
 
-    valueFormatter: (params) => {
-      const v = params.value;
-      if (v === null || v === undefined) return "-";
-      if (typeof v === "object") return JSON.stringify(v);
-      return v;
+    // FORCE text instead of checkbox
+    cellRenderer: (params) => {
+      const val = params.value;
+
+      // Boolean values → show "True" / "False"
+      if (typeof val === "boolean") {
+        return val ? "True" : "False";
+      }
+
+      // Clean readable formatting for ALLOWED field
+      if (key === "allowed" && Array.isArray(val)) {
+        return val
+          .map((obj) => {
+            const proto = obj.IPProtocol?.toUpperCase() || "";
+            const ports = obj.ports ? `(${obj.ports.join(",")})` : "";
+            return `${proto} ${ports}`.trim();
+          })
+          .join(" | ");
+      }
+
+      // Arrays → simple readable output
+      if (Array.isArray(val)) return val.join(", ");
+
+      // Objects → clean 1-line JSON
+      if (typeof val === "object" && val !== null) {
+        return JSON.stringify(val);
+      }
+
+      return val ?? "-";
     },
+
+    cellStyle: { whiteSpace: "nowrap" },
+    autoHeight: true,
+    wrapText: false,
   }));
 };
+
+
 
 
 export default function FullAudit({ file }) {

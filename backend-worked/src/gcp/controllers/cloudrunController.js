@@ -54,7 +54,7 @@ async function analyzeCloudRunAndFunctions(keyFile) {
           unauthenticated,
           exposureRisk,
           recommendation:
-            "Restrict unauthenticated invocations and apply ingress controls for internal-only access.",
+            "⚠️ Restrict unauthenticated invocations and apply ingress controls for internal-only access.",
         });
       }
     } catch (err) {

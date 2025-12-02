@@ -20,7 +20,7 @@ module.exports = function checkIpForwarding(instances) {
         status: vm.status,
         ipForwardingEnabled: true,
         recommendation:
-          "Disable IP forwarding unless this VM is intended to act as a router, NAT gateway, or network appliance."
+          "⚠️ Disable IP forwarding unless this VM is intended to act as a router, NAT gateway, or network appliance."
       });
     }
   });
