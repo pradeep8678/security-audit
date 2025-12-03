@@ -25,8 +25,9 @@ module.exports = function checkDefaultServiceAccount(instances) {
         machineType: vm.machineType,
         status: vm.status,
         serviceAccount: attachedSA,
+        exposureRisk: "HIGH", // individual VM risk
         recommendation:
-          "⚠️ Assign a custom service account with least-privilege IAM permissions instead of using the default one."
+          "Assign a custom service account with least-privilege IAM permissions instead of using the default one.",
       });
     }
   });
@@ -39,12 +40,12 @@ module.exports = function checkDefaultServiceAccount(instances) {
     totalAffected: riskyInstances.length,
     affectedInstances: riskyInstances,
     recommendation:
-      "⚠️ Create and attach a custom service account with restricted IAM roles to each VM.",
+      "Create and attach a custom service account with restricted IAM roles to each VM.",
     status: riskyInstances.length > 0 ? "FAIL" : "PASS",
     humanReadableStatus:
       riskyInstances.length > 0
         ? "Some VMs are using the default Compute Engine service account, which is not recommended."
         : "No VM is using the default service account. Good IAM practice!",
-    riskLevel: "HIGH"  // 🔥 High-risk per CIS benchmarks
+    riskLevel: riskyInstances.length > 0 ? "HIGH" : "LOW", // overall risk
   };
 };

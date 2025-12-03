@@ -68,7 +68,7 @@ exports.checkRdsPublicInstances = async (req, res) => {
 
     return res.json({
       success: true,
-      // message: "⚠️ Public RDS instances detected.",
+      // message: " Public RDS instances detected.",
       instances: publicInstances,
     });
 

@@ -61,7 +61,7 @@ exports.listEC2Instances = async (req, res) => {
           });
         });
       } catch (err) {
-        console.warn(`⚠️ Skipping region ${region}: ${err.message}`);
+        console.warn(` Skipping region ${region}: ${err.message}`);
       }
     }
 

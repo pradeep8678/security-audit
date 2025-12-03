@@ -19,8 +19,9 @@ module.exports = function checkIpForwarding(instances) {
         machineType: vm.machineType,
         status: vm.status,
         ipForwardingEnabled: true,
+        exposureRisk: "HIGH", // per-VM risk
         recommendation:
-          "⚠️ Disable IP forwarding unless this VM is intended to act as a router, NAT gateway, or network appliance."
+          "Disable IP forwarding unless this VM is intended to act as a router, NAT gateway, or network appliance.",
       });
     }
   });
@@ -39,6 +40,6 @@ module.exports = function checkIpForwarding(instances) {
       riskyInstances.length > 0
         ? "Some VMs have IP forwarding enabled, which may expose them to unintended traffic routing risks."
         : "All VMs have IP forwarding disabled — ideal configuration for most workloads.",
-    riskLevel: "HIGH" 
+    riskLevel: riskyInstances.length > 0 ? "HIGH" : "LOW", // overall risk
   };
 };

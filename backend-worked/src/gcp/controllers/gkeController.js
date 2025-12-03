@@ -6,7 +6,6 @@ exports.checkGKEClusters = async (req, res) => {
       return res.status(400).json({ error: "No key file uploaded" });
     }
 
-    // Parse uploaded key file JSON
     const keyFile = JSON.parse(req.file.buffer.toString());
     const projectId = keyFile.project_id;
 
@@ -20,43 +19,96 @@ exports.checkGKEClusters = async (req, res) => {
 
     const container = google.container("v1");
 
-    // Get all clusters across all locations
+    // Fetch clusters across all locations
     const response = await container.projects.locations.clusters.list({
       parent: `projects/${projectId}/locations/-`,
     });
 
     const clusters = response.data.clusters || [];
-    const publicClusters = [];
+    const findings = [];
 
     for (const cluster of clusters) {
       const endpoint = cluster.endpoint || "";
-      const privateNodes =
-        cluster.privateClusterConfig?.enablePrivateNodes || false;
+      const privateNodes = cluster.privateClusterConfig?.enablePrivateNodes || false;
+      const masterIpv4Cidr = cluster.privateClusterConfig?.masterIpv4CidrBlock || null;
 
-      if (endpoint && !privateNodes) {
-        publicClusters.push({
-          name: cluster.name,
-          location: cluster.location,
-          endpoint,
-          privateNodes,
-          recommendation:
-            "⚠️ Public endpoint detected. Consider enabling Private Nodes or restrict API server access.",
-        });
+      const hasAuthorizedNetworks =
+        cluster.masterAuthorizedNetworksConfig?.enabled || false;
+
+      const legacyAbacEnabled = cluster.legacyAbac?.enabled || false;
+
+      const workloadIdentityEnabled =
+        cluster.workloadIdentityConfig?.workloadPool ? true : false;
+
+      const shieldedNodesEnabled = cluster.shieldedNodes?.enabled || false;
+
+      const binaryAuthEnabled = cluster.binaryAuthorization?.enabled || false;
+
+      const networkPolicyEnabled = cluster.networkPolicy?.enabled || false;
+
+      let exposureRisk = "Low";
+
+      // Risk scoring
+      if (!privateNodes) exposureRisk = "High";
+      if (!hasAuthorizedNetworks && !privateNodes) exposureRisk = "High";
+      if (privateNodes && !hasAuthorizedNetworks) exposureRisk = "Medium";
+
+      const issues = [];
+
+      if (!privateNodes) {
+        issues.push("Control plane endpoint is public.");
       }
-    }
 
-    if (publicClusters.length === 0) {
-      return res.json({
-        projectId,
-        message:
-          "✅ No publicly accessible GKE clusters found. All clusters have private endpoints.",
-        clusters: [],
+      if (!hasAuthorizedNetworks) {
+        issues.push("Master Authorized Networks is not enabled.");
+      }
+
+      if (legacyAbacEnabled) {
+        issues.push("Legacy ABAC is enabled — insecure.");
+      }
+
+      if (!workloadIdentityEnabled) {
+        issues.push("Workload Identity is not enabled.");
+      }
+
+      if (!shieldedNodesEnabled) {
+        issues.push("Shielded GKE Nodes are disabled.");
+      }
+
+      if (!networkPolicyEnabled) {
+        issues.push("Network Policy is disabled.");
+      }
+
+      if (!binaryAuthEnabled) {
+        issues.push("Binary Authorization is disabled.");
+      }
+
+      findings.push({
+        name: cluster.name,
+        location: cluster.location,
+        endpoint,
+        privateNodes,
+        masterIpv4Cidr,
+        legacyAbacEnabled,
+        workloadIdentityEnabled,
+        shieldedNodesEnabled,
+        networkPolicyEnabled,
+        binaryAuthEnabled,
+        authorizedNetworksEnabled: hasAuthorizedNetworks,
+        exposureRisk,
+        issues,
+        recommendation:
+          issues.length === 0
+            ? "Cluster is well configured based on security best practices."
+            : "Review the listed security issues and apply GKE CIS Benchmark + hardening guidelines.",
       });
     }
 
+    // Response
     res.json({
       projectId,
-      clusters: publicClusters,
+      totalClusters: clusters.length,
+      findings,
     });
   } catch (error) {
     console.error("Error checking GKE clusters:", error);

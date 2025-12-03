@@ -58,7 +58,7 @@ async function analyzeEKSClusters(credentials) {
           });
         }
 
-        // ⚠️ MEDIUM RISK: Public ON, Private ON
+        //  MEDIUM RISK: Public ON, Private ON
         else if (publicAccess && privateAccess) {
           riskyClusters.push({
             name,

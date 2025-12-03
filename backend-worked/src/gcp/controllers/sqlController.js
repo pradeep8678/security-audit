@@ -6,7 +6,6 @@ exports.checkSqlPublicIps = async (req, res) => {
       return res.status(400).json({ error: "No key file uploaded" });
     }
 
-    // ✅ Parse uploaded service account JSON
     const keyFile = JSON.parse(req.file.buffer.toString());
 
     const auth = new google.auth.GoogleAuth({
@@ -20,31 +19,40 @@ exports.checkSqlPublicIps = async (req, res) => {
     const sqladmin = google.sqladmin("v1beta4");
     const projectId = keyFile.project_id;
 
-    // ✅ Fetch all Cloud SQL instances
     const resInstances = await sqladmin.instances.list({ project: projectId });
     const instances = resInstances.data.items || [];
 
-    // ✅ Filter and extract public IPs
     const publicInstances = [];
 
     for (const instance of instances) {
       const ipAddresses = instance.ipAddresses || [];
+
       for (const ip of ipAddresses) {
         if (ip.type === "PRIMARY" && ip.ipAddress) {
-          // You can optionally check if it's in a public range (not private 10.x.x.x or 192.168.x.x)
+          // Determine exposure risk
+          const exposureRisk = "High"; // Public IP on a Cloud SQL instance is always high risk
+
+          // Recommendation
+          const recommendation = [
+            `Cloud SQL instance "${instance.name}" is publicly accessible.`,
+            "Consider removing the public IP or configuring private IP.",
+            "Use Cloud SQL Proxy or VPC peering for secure access.",
+            "Enable SSL/TLS connections and restrict authorized networks."
+          ].join(" ");
+
           publicInstances.push({
             name: instance.name,
             region: instance.region,
             databaseVersion: instance.databaseVersion,
             backendType: instance.backendType,
             ipAddress: ip.ipAddress,
-            recommendation: `⚠️ Cloud SQL instance "${instance.name}" is publicly accessible. Consider removing the public IP or using a private connection.`,
+            exposureRisk,
+            recommendation,
           });
         }
       }
     }
 
-    // ✅ Response handling
     if (publicInstances.length === 0) {
       return res.json({
         projectId,
@@ -53,13 +61,14 @@ exports.checkSqlPublicIps = async (req, res) => {
       });
     }
 
-    return res.json({
+    res.json({
       projectId,
+      totalPublicInstances: publicInstances.length,
       instances: publicInstances,
     });
 
   } catch (error) {
     console.error("Error checking SQL public IPs:", error);
-    res.status(500).json({ error: "Failed to check SQL public IPs" });
+    res.status(500).json({ error: "Failed to check SQL public IPs", details: error.message });
   }
 };

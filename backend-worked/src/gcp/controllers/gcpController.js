@@ -5,18 +5,14 @@ const checkOsLogin = require("./vmRules/osLoginCheck");
 const checkBlockProjectSSHKeys = require("./vmRules/blockProjectSshKeysCheck");
 const checkIpForwarding = require("./vmRules/ipForwardingCheck");
 
-
-
 exports.listVMs = async (req, res) => {
   try {
     if (!req.file) {
       return res.status(400).json({ error: "No key file uploaded" });
     }
 
-    // Parse uploaded key JSON
     const keyFile = JSON.parse(req.file.buffer.toString("utf8"));
 
-    // Authenticate
     const auth = new google.auth.GoogleAuth({
       credentials: keyFile,
       scopes: ["https://www.googleapis.com/auth/cloud-platform"],
@@ -28,10 +24,8 @@ exports.listVMs = async (req, res) => {
     });
 
     const projectId = keyFile.project_id;
-
     console.log(`🚀 Scanning Compute Engine instances for project: ${projectId}`);
 
-    // Fetch Project Metadata (needed for OS Login rule)
     const projectInfo = await compute.projects.get({ project: projectId });
     const projectMetadata = projectInfo.data.commonInstanceMetadata || {};
 
@@ -58,12 +52,11 @@ exports.listVMs = async (req, res) => {
             shieldedVMConfig: instance.shieldedInstanceConfig || {},
             metadataItems: instance.metadata?.items || [],
             canIpForward: instance.canIpForward || false 
-            
           };
 
           allVMs.push(vmData);
 
-          // Public IP detection
+          // Public IP detection + exposure risk
           instance.networkInterfaces?.forEach((nic) => {
             nic.accessConfigs?.forEach((ac) => {
               if (ac.natIP) {
@@ -74,6 +67,9 @@ exports.listVMs = async (req, res) => {
                   internalIP: nic.networkIP,
                   machineType: vmData.machineType,
                   status: vmData.status,
+                  exposureRisk: "High", // Public IP is always high exposure
+                  recommendation:
+                    "This VM has a public IP. Restrict public exposure, remove the external IP if not required, and enforce firewall rules.",
                 });
               }
             });
@@ -96,12 +92,10 @@ exports.listVMs = async (req, res) => {
     const defaultSAResults = checkDefaultServiceAccount(allVMs);
     const shieldedVmResults = checkShieldedVM(allVMs);
     const osLoginResults = checkOsLogin(allVMs, projectMetadata);
-        const blockProjectSshKeysResults = checkBlockProjectSSHKeys(allVMs, projectMetadata);
-        const ipForwardingResults = checkIpForwarding(allVMs);
+    const blockProjectSshKeysResults = checkBlockProjectSSHKeys(allVMs, projectMetadata);
+    const ipForwardingResults = checkIpForwarding(allVMs);
 
-
-
-    // FINAL RESPONSE (Option C)
+    // FINAL RESPONSE
     return res.json({
       message: "VM audit completed successfully",
       projectId,
@@ -115,7 +109,7 @@ exports.listVMs = async (req, res) => {
         shieldedVmProtectionScan: shieldedVmResults,
         osLoginEnforcementScan: osLoginResults,
         blockProjectWideSshKeysScan: blockProjectSshKeysResults,
-        ipForwardingScan: ipForwardingResults 
+        ipForwardingScan: ipForwardingResults,
       },
     });
 

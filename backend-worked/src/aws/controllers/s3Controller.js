@@ -104,7 +104,7 @@ async function analyzeS3Buckets(credentials) {
 
     return {
       success: true,
-      // message: "⚠️ Public or risky S3 buckets detected.",
+      // message: " Public or risky S3 buckets detected.",
       buckets: publicBuckets
     };
 

@@ -17,7 +17,7 @@ module.exports = function checkBlockProjectSSHKeys(instances, projectMetadata) {
         item.value.trim() !== ""
     ) || false;
 
-  // 🟢 If no SSH keys are defined at the project level → no VM is at risk
+  // 🟢 If no SSH keys are defined at the project level → all VMs are safe
   if (!projectHasSshKeys) {
     return {
       ruleId: "GCP-COMPUTE-005",
@@ -43,12 +43,10 @@ module.exports = function checkBlockProjectSSHKeys(instances, projectMetadata) {
     const blockEntry = metadata.find(
       (item) =>
         item.key === "block-project-ssh-keys" &&
-        (item.value === "true" ||
-          item.value === "TRUE" ||
-          item.value === true)
+        (item.value === "true" || item.value === "TRUE" || item.value === true)
     );
 
-    const isBlocking = blockEntry ? true : false;
+    const isBlocking = !!blockEntry;
 
     if (!isBlocking) {
       riskyInstances.push({
@@ -57,13 +55,13 @@ module.exports = function checkBlockProjectSSHKeys(instances, projectMetadata) {
         machineType: vm.machineType,
         status: vm.status,
         blockProjectSshKeys: "Not Enabled",
+        exposureRisk: "HIGH", // individual VM risk
         recommendation:
-          "⚠️ Enable 'Block Project-Wide SSH Keys' in VM metadata to prevent unintended SSH access from inherited project keys.",
+          "Enable 'Block Project-Wide SSH Keys' in VM metadata to prevent unintended SSH access from inherited project keys.",
       });
     }
   });
 
-  // 🟠 Final response
   return {
     ruleId: "GCP-COMPUTE-005",
     title: "Block Project-Wide SSH Keys",
@@ -78,6 +76,6 @@ module.exports = function checkBlockProjectSSHKeys(instances, projectMetadata) {
       riskyInstances.length > 0
         ? "Some VMs allow project-wide SSH keys, which may expose them to unauthorized SSH access."
         : "All VMs correctly block project-wide SSH keys.",
-    riskLevel: "HIGH", 
+    riskLevel: riskyInstances.length > 0 ? "HIGH" : "LOW", // overall risk
   };
 };

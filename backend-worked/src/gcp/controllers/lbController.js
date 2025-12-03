@@ -6,145 +6,156 @@ exports.checkLoadBalancersAudit = async (req, res) => {
       return res.status(400).json({ error: "Key file is required" });
     }
 
-    // Parse uploaded service account JSON
-    const keyFileBuffer = req.file.buffer.toString("utf8");
-    const keyFile = JSON.parse(keyFileBuffer);
+    const keyFile = JSON.parse(req.file.buffer.toString("utf8"));
+    const projectId = keyFile.project_id;
 
-    // Authenticate
     const auth = new google.auth.GoogleAuth({
       credentials: keyFile,
       scopes: ["https://www.googleapis.com/auth/cloud-platform"],
     });
+    const authClient = await auth.getClient();
+    google.options({ auth: authClient });
 
-    const compute = google.compute({
-      version: "v1",
-      auth,
-    });
-
-    const projectId = keyFile.project_id;
+    const compute = google.compute({ version: "v1", auth: authClient });
     const lbData = [];
+    const getName = (url = "") => url.split("/").pop();
+    let nextPageToken = null;
 
-    // Fetch forwarding rules across all regions
-    let reqPage = await compute.forwardingRules.aggregatedList({ project: projectId });
-    while (reqPage.data) {
-      const items = reqPage.data.items || {};
-      for (const [region, scopedList] of Object.entries(items)) {
+    do {
+      const page = await compute.forwardingRules.aggregatedList({
+        project: projectId,
+        pageToken: nextPageToken,
+      });
+
+      const items = page.data.items || {};
+
+      for (const [, scopedList] of Object.entries(items)) {
         const rules = scopedList.forwardingRules || [];
-        for (const rule of rules) {
-          const lbName = rule.name || "";
-          const target =
-            rule.target || rule.backendService || rule.targetPool || "";
-          const scheme = rule.loadBalancingScheme || "";
-          const ip = rule.IPAddress || "";
 
-          // Default values
+        for (const rule of rules) {
+          const lbName = rule.name;
+          const scheme = rule.loadBalancingScheme || "";
+          const target = rule.target || "";
+          const ip = rule.IPAddress || "None";
+
           let sslPolicy = "N/A";
-          let cloudArmorPolicy = "N/A";
           let sslCertStatus = "N/A";
+          let cloudArmorPolicy = "N/A";
           let httpsRedirect = "N/A";
           let armorRuleStrength = "N/A";
-          let internalExposure = "N/A";
+          let exposureRisk = "Low";
 
           try {
-            // ---- HTTPS Proxy ----
+            // HTTPS Load Balancer
             if (target.includes("targetHttpsProxies")) {
-              const targetName = target.split("/").pop();
+              const proxyName = getName(target);
               const proxy = await compute.targetHttpsProxies.get({
                 project: projectId,
-                targetHttpsProxy: targetName,
+                targetHttpsProxy: proxyName,
               });
 
               sslPolicy = proxy.data.sslPolicy || "None";
               cloudArmorPolicy = proxy.data.securityPolicy || "None";
 
-              // SSL Certificates
               const certUrls = proxy.data.sslCertificates || [];
-              if (certUrls.length > 0) {
-                const certStatus = [];
-                for (const certUrl of certUrls) {
-                  const certName = certUrl.split("/").pop();
-                  const cert = await compute.sslCertificates.get({
-                    project: projectId,
-                    sslCertificate: certName,
-                  });
-                  certStatus.push(
-                    `Valid till: ${cert.data.expireTime || "Unknown"}`
-                  );
-                }
-                sslCertStatus = certStatus.join(", ");
-              } else {
-                sslCertStatus = "No SSL Certificates attached";
-              }
+              sslCertStatus =
+                certUrls.length > 0
+                  ? certUrls.map((url) => `Valid till: ${url}`).join(", ")
+                  : "No SSL Certificates attached";
 
-              // Cloud Armor Rule Strength
-              if (cloudArmorPolicy && cloudArmorPolicy !== "None") {
-                const armorName = cloudArmorPolicy.split("/").pop();
+              if (cloudArmorPolicy !== "None") {
                 const policy = await compute.securityPolicies.get({
                   project: projectId,
-                  securityPolicy: armorName,
+                  securityPolicy: getName(cloudArmorPolicy),
                 });
-                const rules = policy.data.rules || [];
-                armorRuleStrength = rules.length
-                  ? `Strong - ${rules.length} rules`
-                  : "Weak - No rules found";
-              } else {
-                armorRuleStrength = "No Cloud Armor policy";
+                armorRuleStrength =
+                  policy.data.rules?.length > 0
+                    ? `Strong - ${policy.data.rules.length} rules`
+                    : "Weak - No rules found";
               }
             }
 
-            // ---- HTTP Proxy ----
+            // HTTP Load Balancer
             else if (target.includes("targetHttpProxies")) {
-              const targetName = target.split("/").pop();
+              const proxyName = getName(target);
               const proxy = await compute.targetHttpProxies.get({
                 project: projectId,
-                targetHttpProxy: targetName,
+                targetHttpProxy: proxyName,
               });
 
               cloudArmorPolicy = proxy.data.securityPolicy || "None";
 
-              // URL Map check for HTTPS redirect
-              const urlMapUrl = proxy.data.urlMap;
-              if (urlMapUrl) {
-                const urlMapName = urlMapUrl.split("/").pop();
+              if (proxy.data.urlMap) {
+                const urlMapName = getName(proxy.data.urlMap);
                 const urlMap = await compute.urlMaps.get({
                   project: projectId,
                   urlMap: urlMapName,
                 });
+
                 const matchers = urlMap.data.pathMatchers || [];
-                const hasRedirect = matchers.some(
-                  (pm) => pm.defaultRouteAction?.redirectAction
-                );
-                httpsRedirect = hasRedirect ? "Yes" : "No";
+                httpsRedirect = matchers.some((m) =>
+                  m.defaultRouteAction?.redirectAction
+                )
+                  ? "Yes"
+                  : "No";
               } else {
-                httpsRedirect = "No URL map found";
+                httpsRedirect = "No URL Map found";
               }
 
-              // Cloud Armor policy rules
-              if (cloudArmorPolicy && cloudArmorPolicy !== "None") {
-                const armorName = cloudArmorPolicy.split("/").pop();
+              if (cloudArmorPolicy !== "None") {
                 const policy = await compute.securityPolicies.get({
                   project: projectId,
-                  securityPolicy: armorName,
+                  securityPolicy: getName(cloudArmorPolicy),
                 });
-                const rules = policy.data.rules || [];
-                armorRuleStrength = rules.length
-                  ? `Strong - ${rules.length} rules`
-                  : "Weak - No rules found";
-              } else {
-                armorRuleStrength = "No Cloud Armor policy";
+                armorRuleStrength =
+                  policy.data.rules?.length > 0
+                    ? `Strong - ${policy.data.rules.length} rules`
+                    : "Weak - No rules found";
               }
             }
 
-            // ---- External Exposure ----
-            if (scheme === "EXTERNAL") {
-              internalExposure = target.includes("backendServices") ||
-                target.includes("instanceGroups")
-                ? "Potential Risk"
-                : "OK";
+            // ---------------------------
+            // Determine exposure risk
+            // ---------------------------
+            // High: No SSL / No Cloud Armor / No HTTPS redirect
+            if (
+              sslPolicy === "None" ||
+              sslCertStatus.includes("No SSL") ||
+              armorRuleStrength.startsWith("Weak") ||
+              httpsRedirect === "No"
+            ) {
+              exposureRisk = "High";
             }
-          } catch (innerErr) {
-            console.error("Error fetching details for LB:", innerErr.message);
+            // Medium: Some issues
+            else if (
+              sslPolicy !== "None" &&
+              sslCertStatus.includes("Valid") &&
+              armorRuleStrength.startsWith("Strong") &&
+              httpsRedirect === "Yes"
+            ) {
+              exposureRisk = "Low";
+            } else {
+              exposureRisk = "Medium";
+            }
+          } catch (err) {
+            console.error(`Error fetching LB details for ${lbName}:`, err.message);
+            exposureRisk = "High"; // assume high if audit fails
           }
+
+          // ---------------------------
+          // Recommendations
+          // ---------------------------
+          const recommendation = [];
+          if (sslPolicy === "None" || sslPolicy === "N/A")
+            recommendation.push("Attach SSL policy.");
+          if (sslCertStatus.includes("No SSL"))
+            recommendation.push("Attach valid SSL certificate.");
+          if (armorRuleStrength.startsWith("Weak") || cloudArmorPolicy === "None")
+            recommendation.push("Apply Cloud Armor policy.");
+          if (httpsRedirect === "No")
+            recommendation.push("Enable HTTPS redirect.");
+          if (recommendation.length === 0)
+            recommendation.push("Configuration follows best practices.");
 
           lbData.push({
             name: lbName,
@@ -155,24 +166,19 @@ exports.checkLoadBalancersAudit = async (req, res) => {
             https_redirect: httpsRedirect,
             cloud_armor_policy: cloudArmorPolicy,
             armor_rule_strength: armorRuleStrength,
-            internal_exposure: internalExposure,
+            exposure_risk: exposureRisk,
+            recommendation: recommendation.join(" "),
           });
         }
       }
 
-      // Pagination
-      if (reqPage.data.nextPageToken) {
-        reqPage = await compute.forwardingRules.aggregatedList({
-          project: projectId,
-          pageToken: reqPage.data.nextPageToken,
-        });
-      } else break;
-    }
+      nextPageToken = page.data.nextPageToken;
+    } while (nextPageToken);
 
-    res.json({ projectId, loadBalancers: lbData });
+    return res.json({ projectId, loadBalancers: lbData });
   } catch (error) {
     console.error("Error in load balancer audit:", error);
-    res.status(500).json({
+    return res.status(500).json({
       error: "Failed to fetch load balancer audit",
       details: error.message,
     });

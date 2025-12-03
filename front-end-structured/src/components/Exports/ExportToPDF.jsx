@@ -110,7 +110,7 @@ export default function ExportToPDF({ auditResult, onClick }) {
     if (!value) return "-";
 
     const stripUnicode = (str) =>
-      str.replace(/[^\x00-\x7F]/g, ""); // removes ⚠️ and emojis
+      str.replace(/[^\x00-\x7F]/g, ""); // removes  and emojis
 
     if (Array.isArray(value)) {
       return stripUnicode(

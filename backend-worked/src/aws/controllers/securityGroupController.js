@@ -112,7 +112,7 @@ exports.scanSecurityGroups = async (req, res) => {
           }
         }
       } catch (err) {
-        console.log(`⚠️ Skipping region ${region} → ${err.message}`);
+        console.log(` Skipping region ${region} → ${err.message}`);
       }
     }
 

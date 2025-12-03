@@ -35,19 +35,34 @@ async function analyzeBuckets(keyFile) {
 
         const bindings = policyRes.data.bindings || [];
 
-        const isPublic = bindings.some(
-          (b) =>
-            (b.members || []).includes("allUsers") ||
-            (b.members || []).includes("allAuthenticatedUsers")
+        // Check who has access
+        let exposure = null;
+        let risk = "Low";
+
+        const isAllUsers = bindings.some((b) =>
+          (b.members || []).includes("allUsers")
         );
 
-        if (isPublic) {
+        const isAllAuthenticated = bindings.some((b) =>
+          (b.members || []).includes("allAuthenticatedUsers")
+        );
+
+        if (isAllUsers) {
+          exposure = "allUsers";
+          risk = "High";
+        } else if (isAllAuthenticated) {
+          exposure = "allAuthenticatedUsers";
+          risk = "Medium";
+        }
+
+        if (exposure) {
           publicBuckets.push({
             name: bucket.name,
             location: bucket.location,
             storageClass: bucket.storageClass,
-            access: "Public",
-            recommendation: `⚠️ Bucket "${bucket.name}" is publicly accessible. Restrict access via IAM or make it private.`,
+            access: exposure,
+            riskLevel: risk,
+            recommendation: `Bucket "${bucket.name}" is publicly accessible (${exposure}). Restrict access via IAM or make it private immediately.`,
           });
         }
       } catch (err) {
@@ -95,5 +110,5 @@ exports.listBuckets = async (req, res) => {
   }
 };
 
-// ✅ Export both functions
+// Export both functions
 exports.analyzeBuckets = analyzeBuckets;

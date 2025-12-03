@@ -14,9 +14,7 @@ module.exports = function checkOsLogin(instances, projectMetadata) {
     projectMetadata?.items?.some(
       (item) =>
         item.key === "enable-oslogin" &&
-        (item.value === "true" ||
-          item.value === "TRUE" ||
-          item.value === true)
+        (item.value === "true" || item.value === "TRUE" || item.value === true)
     ) || false;
 
   instances.forEach((vm) => {
@@ -29,18 +27,13 @@ module.exports = function checkOsLogin(instances, projectMetadata) {
     const osLoginEntry = metadataItems.find(
       (item) =>
         item.key === "enable-oslogin" &&
-        (item.value === "true" ||
-          item.value === "TRUE" ||
-          item.value === true)
+        (item.value === "true" || item.value === "TRUE" || item.value === true)
     );
 
-    if (osLoginEntry) {
-      instanceOsLoginEnabled = true;
-    }
+    if (osLoginEntry) instanceOsLoginEnabled = true;
 
-    // Computing final decision
-    const isOsLoginEnabled =
-      instanceOsLoginEnabled || projectOsLoginEnabled;
+    // Compute final decision
+    const isOsLoginEnabled = instanceOsLoginEnabled || projectOsLoginEnabled;
 
     // If OS Login is disabled → add to risky list
     if (!isOsLoginEnabled) {
@@ -50,8 +43,9 @@ module.exports = function checkOsLogin(instances, projectMetadata) {
         machineType: vm.machineType,
         status: vm.status,
         osLoginStatus: "Disabled (Not Enforced)",
+        exposureRisk: "HIGH", // per-instance risk
         recommendation:
-          "⚠️ Enable OS Login to enforce IAM-based SSH access and eliminate unmanaged SSH keys."
+          "Enable OS Login to enforce IAM-based SSH access and eliminate unmanaged SSH keys.",
       });
     }
   });
@@ -70,6 +64,6 @@ module.exports = function checkOsLogin(instances, projectMetadata) {
       riskyInstances.length > 0
         ? "Some VMs do not enforce OS Login, allowing unmanaged SSH keys and increasing the risk of unauthorized access."
         : "All VMs enforce OS Login. Centralized IAM-based SSH access is properly configured.",
-    riskLevel: "HIGH" // 🔥 High-risk: unmanaged SSH keys elevate threat exposure
+    riskLevel: riskyInstances.length > 0 ? "HIGH" : "LOW", // overall risk
   };
 };

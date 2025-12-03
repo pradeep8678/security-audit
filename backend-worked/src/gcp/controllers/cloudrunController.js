@@ -17,6 +17,17 @@ async function analyzeCloudRunAndFunctions(keyFile) {
     const cloudRun = google.run({ version: "v1", auth });
     const results = [];
 
+    // FUNCTION to compute exposure risk
+    const computeRisk = ({ ingress, hasAllUsers, hasAllAuthUsers, unauthenticated }) => {
+      if (hasAllUsers || unauthenticated === "Yes" || ingress === "ALLOW_ALL" || ingress === "all") {
+        return "High";
+      }
+      if (hasAllAuthUsers || ingress === "internal-and-cloud-load-balancing") {
+        return "Medium";
+      }
+      return "Low";
+    };
+
     // ---------------- Cloud Functions ----------------
     try {
       const fnRes = await cloudFunctions.projects.locations.functions.list({
@@ -27,20 +38,26 @@ async function analyzeCloudRunAndFunctions(keyFile) {
         const name = fn.name.split("/").pop();
         const region = fn.name.split("/")[3] || "global";
         const runtime = fn.runtime || "N/A";
+
         const triggerType = fn.httpsTrigger ? "HTTP" : "Event";
-        const url =
-          fn.httpsTrigger?.url || `https://${region}-${projectId}.cloudfunctions.net/${name}`;
+        const url = fn.httpsTrigger?.url || `https://${region}-${projectId}.cloudfunctions.net/${name}`;
+
         const ingress = fn.ingressSettings || "N/A";
         const authLevel = fn.httpsTrigger?.securityLevel || "N/A";
         const sa = fn.serviceAccountEmail || "N/A";
+
         const unauthenticated = authLevel === "SECURE_OPTIONAL" ? "Yes" : "No";
 
-        const exposureRisk =
-          ingress === "ALLOW_ALL" || unauthenticated === "Yes"
-            ? "High"
-            : ingress === "ALLOW_INTERNAL_AND_GCLB"
-            ? "Medium"
-            : "Low";
+        const hasAllUsers = unauthenticated === "Yes";
+        const hasAllAuthUsers = false; // CF does not expose this directly; left as false
+
+        // Compute unified Exposure Risk
+        const exposureRisk = computeRisk({
+          ingress,
+          hasAllUsers,
+          hasAllAuthUsers,
+          unauthenticated
+        });
 
         results.push({
           type: "Cloud Function",
@@ -54,7 +71,7 @@ async function analyzeCloudRunAndFunctions(keyFile) {
           unauthenticated,
           exposureRisk,
           recommendation:
-            "⚠️ Restrict unauthenticated invocations and apply ingress controls for internal-only access.",
+            "Restrict unauthenticated access, enforce IAM invocation, and apply ingress controls.",
         });
       }
     } catch (err) {
@@ -83,8 +100,11 @@ async function analyzeCloudRunAndFunctions(keyFile) {
         const ingress = metadata.annotations?.["run.googleapis.com/ingress"] || "N/A";
         const sa = tmplSpec.serviceAccountName || "N/A";
 
+        let hasAllUsers = false;
+        let hasAllAuthUsers = false;
+
         let unauthenticated = "No";
-        let authLevel = "Unknown";
+        let authLevel = "Restricted";
 
         try {
           const policy = await cloudRun.projects.locations.services.getIamPolicy({
@@ -92,8 +112,9 @@ async function analyzeCloudRunAndFunctions(keyFile) {
           });
 
           const members = (policy.data.bindings || []).flatMap((b) => b.members || []);
-          const hasAllUsers = members.some((m) => m.includes("allUsers"));
-          const hasAllAuthUsers = members.some((m) => m.includes("allAuthenticatedUsers"));
+
+          hasAllUsers = members.some((m) => m === "allUsers");
+          hasAllAuthUsers = members.some((m) => m === "allAuthenticatedUsers");
 
           unauthenticated = hasAllUsers ? "Yes" : "No";
           authLevel = hasAllUsers
@@ -105,12 +126,13 @@ async function analyzeCloudRunAndFunctions(keyFile) {
           console.warn(`Policy fetch failed for ${name}:`, e.message);
         }
 
-        const exposureRisk =
-          ingress === "all" || unauthenticated === "Yes"
-            ? "High"
-            : ingress === "internal-and-cloud-load-balancing"
-            ? "Medium"
-            : "Low";
+        // Compute unified Exposure Risk
+        const exposureRisk = computeRisk({
+          ingress,
+          hasAllUsers,
+          hasAllAuthUsers,
+          unauthenticated
+        });
 
         results.push({
           type: "Cloud Run",
@@ -124,7 +146,7 @@ async function analyzeCloudRunAndFunctions(keyFile) {
           unauthenticated,
           exposureRisk,
           recommendation:
-            "Restrict unauthenticated invocations and use ingress controls for internal-only access.",
+            "Restrict unauthenticated access and use 'internal' ingress for private services.",
         });
       }
     } catch (err) {
@@ -167,5 +189,5 @@ exports.scanCloudRunAndFunctions = async (req, res) => {
   }
 };
 
-// ✅ Export both
+// Export both
 exports.analyzeCloudRunAndFunctions = analyzeCloudRunAndFunctions;
