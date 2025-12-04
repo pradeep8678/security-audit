@@ -290,16 +290,16 @@ export default function FullAudit({ file }) {
   const [selectedResource, setSelectedResource] = useState(null);
   const [showDropdown, setShowDropdown] = useState(false);
 
- const resourceList = [
-  "Buckets",
-  "Firewall Rules",
-  "GKE Clusters",
-  "SQL Instances",
-  "Cloud Run / Functions",
-  "Load Balancers",
-  "Owner IAM Roles",
-  "VM Scan",
-];
+  const resourceList = [
+    "Buckets",
+    "Firewall Rules",
+    "GKE Clusters",
+    "SQL Instances",
+    "Cloud Run / Functions",
+    "Load Balancers",
+    "Owner IAM Roles",
+    "VM Scan",
+  ];
 
 
   // Run audit
@@ -355,7 +355,7 @@ export default function FullAudit({ file }) {
     const field = mapping[name];
 
     // Handle VM SCAN (multiple rule tables inside)
-   if (name === "VM Scan") {
+    if (name === "VM Scan") {
 
       const vmScan = result[name].vmScan;
       if (!vmScan) return <p>No VM data found</p>;
@@ -375,7 +375,7 @@ export default function FullAudit({ file }) {
 
             return (
               <div key={ruleKey} className={styles.subCard}>
-               <h4 className={styles.subHeading}>{rule.title}</h4>
+                <h4 className={styles.subHeading}>{rule.title}</h4>
 
                 <AgTable rowData={items} columnDefs={colDefs} height={300} />
               </div>
@@ -384,6 +384,42 @@ export default function FullAudit({ file }) {
         </div>
       );
     }
+
+    if (name === "Owner IAM Roles") {
+      const iamScan = result[name].iamScan;
+      if (!iamScan) return <p>No IAM scan data found</p>;
+
+      // Each sub-scan is treated like a "rule" similar to VM Scan
+      const rules = [
+        { title: "Owner Service Accounts", items: iamScan.ownerServiceAccountScan?.ownerServiceAccounts },
+        { title: "KMS Public Access", items: iamScan.kmsPublicAccessScan },
+        { title: "KMS Rotation", items: iamScan.kmsRotationScan },
+        { title: "KMS Separation of Duties", items: iamScan.kmsSeparationOfDutiesScan },
+        { title: "Project Level Service Roles", items: iamScan.projectLevelServiceRolesScan },
+        { title: "Service Account Key Rotation (90 days)", items: iamScan.saKeyRotation90DaysScan },
+        { title: "User Managed Keys", items: iamScan.userManagedKeysScan },
+      ];
+
+      return (
+        <div className={styles.card}>
+          <h3 className={styles.cardTitle}>Owner IAM Roles Security Findings</h3>
+
+          {rules.map((rule, idx) => {
+            if (!rule.items || rule.items.length === 0) return null;
+
+            const colDefs = generateColumnDefs(rule.items);
+
+            return (
+              <div key={idx} className={styles.subCard}>
+                <h4 className={styles.subHeading}>{rule.title}</h4>
+                <AgTable rowData={rule.items} columnDefs={colDefs} height={300} />
+              </div>
+            );
+          })}
+        </div>
+      );
+    }
+
 
     // Normal resources
     const items = result[name][field];

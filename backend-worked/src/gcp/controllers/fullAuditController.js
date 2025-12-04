@@ -89,7 +89,7 @@ exports.runFullAudit = async (req, res) => {
       invokeController("SQL Instances", sqlController.checkSqlPublicIps, file),
       invokeController("Cloud Run / Functions", cloudrunController.scanCloudRunAndFunctions, file),
       invokeController("Load Balancers", lbController.checkLoadBalancersAudit, file),
-      invokeController("Owner IAM Roles", ownerController.checkOwnerServiceAccounts, file),
+      invokeController("Owner IAM Roles", ownerController.checkIAM, file),
       invokeController("VM Scan", gcpController.listVMs, file),
     ]);
 

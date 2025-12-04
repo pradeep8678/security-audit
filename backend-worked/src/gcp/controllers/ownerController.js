@@ -1,10 +1,18 @@
+// ownerController.js
 const { google } = require("googleapis");
 
-exports.checkOwnerServiceAccounts = async (req, res) => {
+// IAM RULES
+const checkKmsPublicAccess = require("./iam/checkKmsPublicAccess");
+const checkKmsRotation = require("./iam/checkKmsRotation");
+const checkKmsSeparationOfDuties = require("./iam/checkKmsSeparationOfDuties");
+const checkProjectLevelServiceRoles = require("./iam/checkProjectLevelServiceRoles");
+const checkSaKeyRotation90Days = require("./iam/checkSaKeyRotation90Days");
+const checkUserManagedKeys = require("./iam/checkUserManagedKeys");
+const checkOwnerServiceAccounts = require("./iam/checkOwnerServiceAccounts");
+
+exports.checkIAM = async (req, res) => {
   try {
-    if (!req.file) {
-      return res.status(400).json({ error: "Key file is required" });
-    }
+    if (!req.file) return res.status(400).json({ error: "Key file is required" });
 
     const keyFile = JSON.parse(req.file.buffer.toString("utf8"));
 
@@ -13,65 +21,36 @@ exports.checkOwnerServiceAccounts = async (req, res) => {
       scopes: ["https://www.googleapis.com/auth/cloud-platform"],
     });
 
-    const crm = google.cloudresourcemanager({
-      version: "v1",
-      auth,
-    });
-
+    const client = await auth.getClient();
     const projectId = keyFile.project_id;
 
-    // Fetch project IAM policy
-    const policy = await crm.projects.getIamPolicy({
-      resource: projectId,
-      requestBody: {},
-    });
+    console.log(`🚀 Running IAM Audit for project: ${projectId}`);
 
-    const ownerData = [];
+    // Execute checks
+    const ownerSaScan = await checkOwnerServiceAccounts(client, projectId);
+    const kmsPublicScan = await checkKmsPublicAccess(client, projectId);
+    const kmsRotationScan = await checkKmsRotation(client, projectId);
+    const kmsSeparationScan = await checkKmsSeparationOfDuties(client, projectId);
+    const projectRolesScan = await checkProjectLevelServiceRoles(client, projectId);
+    const saKeyRotationScan = await checkSaKeyRotation90Days(client, projectId);
+    const userManagedKeyScan = await checkUserManagedKeys(client, projectId);
 
-    for (const binding of policy.data.bindings || []) {
-      if (binding.role === "roles/owner") {
-        for (const member of binding.members || []) {
-          if (member.startsWith("serviceAccount:")) {
-            // -----------------------------
-            // 🔍 Determine Exposure Risk
-            // -----------------------------
-            const exposureRisk = "High"; // Owner role is always high risk for a service account
-
-            // -----------------------------
-            // 🔍 Recommendations
-            // -----------------------------
-            const recommendation = [
-              "Reduce this service account's permissions following the principle of least privilege.",
-              "Avoid giving 'roles/owner' to service accounts unless absolutely necessary.",
-              "Rotate keys regularly to minimize credential exposure risk.",
-              "Enable monitoring and audit logs to track any usage of this Owner-role service account."
-            ].join(" ");
-
-            ownerData.push({
-              serviceAccount: member,
-              role: binding.role,
-              exposureRisk,
-              recommendation,
-            });
-          }
-        }
-      }
-    }
-
-    res.json({
+    // Final response
+    return res.json({
+      message: "IAM audit completed successfully",
       projectId,
-      totalOwnerServiceAccounts: ownerData.length,
-      ownerServiceAccounts: ownerData,
-      message:
-        ownerData.length === 0
-          ? "✅ No service accounts with Owner role found."
-          : "⚠️ High-risk service accounts found. Review immediately.",
+      iamScan: {
+        ownerServiceAccountScan: ownerSaScan,
+        kmsPublicAccessScan: kmsPublicScan,
+        kmsRotationScan: kmsRotationScan,
+        kmsSeparationOfDutiesScan: kmsSeparationScan,
+        projectLevelServiceRolesScan: projectRolesScan,
+        saKeyRotation90DaysScan: saKeyRotationScan,
+        userManagedKeysScan: userManagedKeyScan,
+      },
     });
-  } catch (error) {
-    console.error("Error checking owner service accounts:", error);
-    res.status(500).json({
-      error: "Failed to fetch owner service accounts",
-      details: error.message,
-    });
+  } catch (err) {
+    console.error("❌ Error in IAM audit:", err);
+    return res.status(500).json({ error: "IAM audit failed", details: err.message });
   }
 };
