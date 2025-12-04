@@ -22,28 +22,39 @@ module.exports = async function checkKmsSeparationOfDuties(client, projectId) {
       const role = binding.role;
       const members = binding.members || [];
 
-      if (role === "roles/cloudkms.admin") members.forEach(m => kmsAdmins.add(m));
+      // Collect KMS Admins
+      if (role === "roles/cloudkms.admin") {
+        members.forEach((m) => kmsAdmins.add(m));
+      }
+
+      // Collect crypto key users
       if (
         role === "roles/cloudkms.cryptoKeyEncrypterDecrypter" ||
         role === "roles/cloudkms.cryptoKeyEncrypter" ||
         role === "roles/cloudkms.cryptoKeyDecrypter"
-      )
-        members.forEach(m => cryptoUsers.add(m));
+      ) {
+        members.forEach((m) => cryptoUsers.add(m));
+      }
     }
 
+    // Identify violations — user having both admin + cryptoKey permissions
     for (const member of cryptoUsers) {
       if (kmsAdmins.has(member)) violatingMembers.add(member);
     }
 
-    results.push({
-      projectId,
-      status: violatingMembers.size > 0 ? "FAIL" : "PASS",
-      violatingMembers: Array.from(violatingMembers),
-      message:
-        violatingMembers.size > 0
-          ? `Separation of duties NOT enforced. Members with both admin and crypto roles: ${Array.from(violatingMembers).join(", ")}`
-          : `Separation of duties enforced for all KMS-related roles in project ${projectId}.`,
-    });
+    // Only return FAIL if violation exists
+    if (violatingMembers.size > 0) {
+      results.push({
+        projectId,
+        // status: "FAIL",
+        violatingMembers: Array.from(violatingMembers),
+        exposureRisk: "High",
+        recommendation:
+          "Separate KMS administrative roles from cryptographic key usage roles. No identity should have both admin and encrypter/decrypter permissions.",
+      });
+    }
+
+    // If no violation → return empty results (no vulnerabilities)
   } catch (error) {
     console.error("KMS Separation of Duties Check Error:", error);
     results.push({

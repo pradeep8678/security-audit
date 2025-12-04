@@ -4,12 +4,11 @@ const { google } = require("googleapis");
 module.exports = async function checkUserManagedKeys(auth, projectId) {
   const iam = google.iam({ version: "v1", auth });
   const results = [];
-  const vulnerableAccounts = [];
 
   try {
     const parent = `projects/${projectId}`;
 
-    // Fetch all service accounts
+    // List all service accounts
     const saList = await iam.projects.serviceAccounts.list({ name: parent });
     const accounts = saList.data.accounts || [];
 
@@ -17,34 +16,25 @@ module.exports = async function checkUserManagedKeys(auth, projectId) {
       const serviceAccountEmail = sa.email;
       const fullName = sa.name;
 
-      // Fetch keys of this service account
+      // List keys for this service account
       const keyList = await iam.projects.serviceAccounts.keys.list({ name: fullName });
       const keys = keyList.data.keys || [];
 
-      let status = "PASS";
-      let message = `Account ${serviceAccountEmail} does not have user-managed keys.`;
+      // Filter only user-managed keys
+      const userManagedKeys = keys.filter(k => k.keyType === "USER_MANAGED");
 
-      for (const key of keys) {
-        if (key.keyType === "USER_MANAGED") {
-          status = "FAIL";
-          message = `Account ${serviceAccountEmail} has user-managed keys.`;
-
-          vulnerableAccounts.push({
-            serviceAccount: serviceAccountEmail,
-            keyName: key.name,
-            keyType: key.keyType,
-          });
-        }
-      }
+      const hasUserManagedKeys = userManagedKeys.length > 0;
 
       results.push({
+        projectId,
         serviceAccount: serviceAccountEmail,
-        status,
-        message,
-        recommendation:
-          status === "FAIL"
-            ? "Remove user-managed keys and use Google-managed keys instead for security."
-            : "Compliant.",
+        hasUserManagedKeys,
+        userManagedKeyCount: userManagedKeys.length,
+        // status: hasUserManagedKeys ? "FAIL" : "PASS",
+        exposureRisk: hasUserManagedKeys ? "High" : "Low",
+        recommendation: hasUserManagedKeys
+          ? "Remove user-managed service account keys immediately. Prefer Google-managed keys or workload identity federation."
+          : "No user-managed keys found. Compliant.",
       });
     }
   } catch (error) {

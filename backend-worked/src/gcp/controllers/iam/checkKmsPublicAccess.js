@@ -5,7 +5,7 @@ module.exports = async function checkKmsPublicAccess(client, projectId) {
   const results = [];
 
   try {
-    // 1️⃣ List all available locations for the project
+    // List all locations
     const locationsResp = await kms.projects.locations.list({
       name: `projects/${projectId}`,
     });
@@ -15,14 +15,14 @@ module.exports = async function checkKmsPublicAccess(client, projectId) {
     for (const loc of locations) {
       const locationId = loc.locationId;
 
-      // 2️⃣ List key rings for this location
+      // List key rings
       const keyRingsResp = await kms.projects.locations.keyRings.list({
         parent: `projects/${projectId}/locations/${locationId}`,
       });
 
       const keyRings = keyRingsResp.data.keyRings || [];
 
-      // 3️⃣ List keys in each key ring and check public access
+      // List crypto keys inside each key ring
       for (const keyRing of keyRings) {
         const cryptoKeysResp = await kms.projects.locations.keyRings.cryptoKeys.list({
           parent: keyRing.name,
@@ -31,30 +31,38 @@ module.exports = async function checkKmsPublicAccess(client, projectId) {
         const cryptoKeys = cryptoKeysResp.data.cryptoKeys || [];
 
         for (const key of cryptoKeys) {
-          const policyResp = await kms.projects.locations.keyRings.cryptoKeys.getIamPolicy({
-            resource: key.name,
-          });
+          const policyResp =
+            await kms.projects.locations.keyRings.cryptoKeys.getIamPolicy({
+              resource: key.name,
+            });
 
           const bindings = policyResp.data.bindings || [];
+
           const isPublic = bindings.some(b =>
-            (b.members || []).some(m => m === "allUsers" || m === "allAuthenticatedUsers")
+            (b.members || []).some(
+              m => m === "allUsers" || m === "allAuthenticatedUsers"
+            )
           );
 
-          results.push({
-            keyName: key.name,
-            location: locationId,
-            status: isPublic ? "FAIL" : "PASS",
-            message: isPublic
-              ? `Key ${key.name} may be publicly accessible.`
-              : `Key ${key.name} is not exposed to public.`,
-          });
+          // ❗ Only store FAIL items
+          if (isPublic) {
+            results.push({
+              projectId,
+              keyName: key.name,
+              location: locationId,
+              // status: "FAIL",
+              exposureRisk: "High",
+              recommendation:
+                "Remove public access (allUsers/allAuthenticatedUsers) from this KMS key immediately.",
+            });
+          }
         }
       }
     }
   } catch (error) {
     console.error("KMS Public Access Check Error:", error);
     results.push({
-      error: "Failed to check public KMS access",
+      error: "Failed to check public KMS key access",
       details: error.message,
     });
   }

@@ -7,7 +7,6 @@ module.exports = async function checkProjectLevelServiceRoles(auth, projectId) {
   const vulnerableBindings = [];
 
   try {
-    // Get IAM policy
     const policyResponse = await crm.projects.getIamPolicy({
       resource: projectId,
       requestBody: {},
@@ -15,7 +14,7 @@ module.exports = async function checkProjectLevelServiceRoles(auth, projectId) {
 
     const bindings = policyResponse.data.bindings || [];
 
-    // Roles to check
+    // Sensitive roles that should NOT be assigned at project level
     const sensitiveRoles = [
       "roles/iam.serviceAccountUser",
       "roles/iam.serviceAccountTokenCreator",
@@ -23,28 +22,28 @@ module.exports = async function checkProjectLevelServiceRoles(auth, projectId) {
 
     for (const binding of bindings) {
       if (sensitiveRoles.includes(binding.role)) {
-        vulnerableBindings.push({
-          role: binding.role,
-          members: binding.members || [],
-          projectId,
-        });
+        vulnerableBindings.push(binding);
 
         report.push({
-          role: binding.role,
-          status: "FAIL",
           projectId,
-          message: `IAM Users assigned to service role '${binding.role}' at project level ${projectId}.`,
+          role: binding.role,
+          members: binding.members || [],
+          status: "FAIL",
+          exposureRisk: "High",
           recommendation:
-            "Avoid assigning service roles at project level. Use least privilege principles.",
+            "Avoid assigning Service Account User or Token Creator roles at project level. Grant permissions only on specific service accounts following least privilege.",
         });
       }
     }
 
+    // PASS case (no risky bindings found)
     if (vulnerableBindings.length === 0) {
       report.push({
         projectId,
-        status: "PASS",
-        message: `No IAM Users assigned to sensitive service roles at project level ${projectId}.`,
+        // status: "PASS",
+        exposureRisk: "Low",
+        recommendation:
+          "No risky service roles assigned at project level. No action required.",
       });
     }
 

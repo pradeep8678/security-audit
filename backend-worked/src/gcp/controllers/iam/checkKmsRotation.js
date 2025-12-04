@@ -25,15 +25,18 @@ module.exports = async function checkKmsRotation(client, projectId) {
         for (const key of keysResp.data.cryptoKeys || []) {
           const rotationPeriod = key.rotationPeriod || null;
 
+          // If key rotation is enabled, skip (no vulnerability)
+          if (rotationPeriod) continue;
+
+          // If FAIL → return vulnerability
           results.push({
             keyName: key.name,
             location: locationId,
-            rotationPeriod: rotationPeriod || "NONE",
-            status: rotationPeriod ? "PASS" : "FAIL",
-            message: rotationPeriod ? "Rotation policy enabled." : "Rotation policy NOT enabled.",
-            recommendation: rotationPeriod
-              ? "Key is compliant."
-              : "Enable automatic key rotation (recommended: every 90 days).",
+            rotationPeriod: "NONE",
+            // status: "FAIL",
+            exposureRisk: "High",
+            recommendation:
+              "Enable automatic key rotation (recommended: every 90 days) to reduce exposure risk.",
           });
         }
       }

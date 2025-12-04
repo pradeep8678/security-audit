@@ -22,9 +22,12 @@ module.exports = async function checkOwnerServiceAccounts(client, projectId) {
             ownerData.push({
               serviceAccount: member,
               role: binding.role,
+
+              // Same exact style you used in other checks
               exposureRisk: "High",
+
               recommendation:
-                "Reduce this service account's permissions following the principle of least privilege. Avoid giving 'roles/owner' to service accounts unless absolutely necessary.",
+                "Remove 'roles/owner' from this service account and assign only the minimum required permissions.",
             });
           }
         }
@@ -38,12 +41,18 @@ module.exports = async function checkOwnerServiceAccounts(client, projectId) {
     };
   }
 
+  const hasOwners = ownerData.length > 0;
+
   return {
     totalOwnerServiceAccounts: ownerData.length,
     ownerServiceAccounts: ownerData,
-    message:
-      ownerData.length === 0
-        ? "✅ No service accounts with Owner role found."
-        : "⚠️ High-risk service accounts found. Review immediately.",
+    // status: hasOwners ? "FAIL" : "PASS",
+
+    // Same structure you used in KMS + IAM checks
+    exposureRisk: hasOwners ? "High" : "Low",
+
+    recommendation: hasOwners
+      ? "Remove Owner permissions from service accounts to prevent full-project compromise."
+      : "No risky service accounts found. No action required.",
   };
 };
