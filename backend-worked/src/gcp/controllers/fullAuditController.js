@@ -13,6 +13,7 @@ const cloudrunController = require("./cloudrunController");
 const lbController = require("./lbController");
 const ownerController = require("./ownerController");
 const gcpController = require("./gcpController"); // VM + additional GCP audits
+const bigqueryController = require("./bigqueryController"); 
 
 /**
  * Utility to execute any Express-style controller function and capture its JSON response
@@ -86,11 +87,13 @@ exports.runFullAudit = async (req, res) => {
       invokeController("Buckets", bucketController.auditBuckets, file),
       invokeController("Firewall Rules", firewallController.scanFirewallRules, file),
       invokeController("GKE Clusters", gkeController.checkGKEClusters, file),
-      invokeController("SQL Instances", sqlController.checkSqlPublicIps, file),
+      invokeController("SQL Instances", sqlController.checkSQL, file),
       invokeController("Cloud Run / Functions", cloudrunController.scanCloudRunAndFunctions, file),
       invokeController("Load Balancers", lbController.checkLoadBalancersAudit, file),
       invokeController("Owner IAM Roles", ownerController.checkIAM, file),
       invokeController("VM Scan", gcpController.listVMs, file),
+      invokeController("Big Query Scan", bigqueryController.checkBigQuery, file),
+   
     ]);
 
     // Combine everything into a final report
