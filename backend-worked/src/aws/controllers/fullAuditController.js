@@ -96,7 +96,7 @@ exports.runFullAwsAudit = async (req, res) => {
     ]);
 
     return res.status(200).json({
-      message: "✅ Full AWS Security Audit completed successfully.",
+      // message: "✅ Full AWS Security Audit completed successfully.",
       timestamp: new Date().toISOString(),
       totalChecks: results.length,
       results,
@@ -104,7 +104,7 @@ exports.runFullAwsAudit = async (req, res) => {
   } catch (err) {
     console.error("🔥 Full AWS audit failed:", err);
     return res.status(500).json({
-      message: "Full AWS audit failed",
+      // message: "Full AWS audit failed",
       error: err.message,
     });
   }

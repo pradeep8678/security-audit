@@ -83,7 +83,7 @@ exports.runFullAudit = async (req, res) => {
 
     // Run all audits in parallel
     const results = await Promise.all([
-      invokeController("Buckets", bucketController.listBuckets, file),
+      invokeController("Buckets", bucketController.auditBuckets, file),
       invokeController("Firewall Rules", firewallController.scanFirewallRules, file),
       invokeController("GKE Clusters", gkeController.checkGKEClusters, file),
       invokeController("SQL Instances", sqlController.checkSqlPublicIps, file),
@@ -95,7 +95,7 @@ exports.runFullAudit = async (req, res) => {
 
     // Combine everything into a final report
     return res.status(200).json({
-      message: "✅ Full GCP Security Audit completed successfully.",
+      // message: "✅ Full GCP Security Audit completed successfully.",
       timestamp: new Date().toISOString(),
       totalChecks: results.length,
       results,

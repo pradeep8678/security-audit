@@ -97,7 +97,7 @@ exports.listVMs = async (req, res) => {
 
     // FINAL RESPONSE
     return res.json({
-      message: "VM audit completed successfully",
+      // message: "VM audit completed successfully",
       projectId,
       vmScan: {
         publicIpScan: {

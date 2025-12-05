@@ -85,7 +85,7 @@ exports.scanFirewallRules = async (req, res) => {
     if (publicRules.length === 0) {
       return res.json({
         projectId,
-        message: "✅ No public firewall rules found. All rules are restricted.",
+        // message: "✅ No public firewall rules found. All rules are restricted.",
         publicRules: [],
       });
     }
