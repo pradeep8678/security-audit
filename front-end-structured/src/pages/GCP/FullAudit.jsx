@@ -5,7 +5,6 @@ import ExportToPDF from "../../components/Exports/ExportToPDF";
 import AgTable from "../../components/table/AgTable";
 import styles from "../../styles/FullAudit.module.css";
 
-
 // ===============================================
 // Helper: Auto-generate AG-Grid columns
 // ===============================================
@@ -51,14 +50,12 @@ const generateColumnDefs = (data = []) => {
   }));
 };
 
-
 // ===============================================
-// Helper: Access nested fields like: a.b.c.d
+// Helper: Access nested fields dynamically
 // ===============================================
 const getNested = (obj, path) => {
   return path.split(".").reduce((acc, key) => acc?.[key], obj);
 };
-
 
 // ===============================================
 // MAIN COMPONENT
@@ -70,6 +67,7 @@ export default function FullAudit({ file }) {
   const [selectedResource, setSelectedResource] = useState(null);
   const [showDropdown, setShowDropdown] = useState(false);
 
+  // Now includes NEW RESOURCE BigQuery Scan
   const resourceList = [
     "Buckets",
     "Firewall Rules",
@@ -79,20 +77,22 @@ export default function FullAudit({ file }) {
     "Load Balancers",
     "Owner IAM Roles",
     "VM Scan",
+    "Big Query Scan"
   ];
 
-  // ===============================================
-  // Corrected Mapping for GCP Full Audit Output
-  // ===============================================
+  // Mapping updated for new fields
   const mapping = {
-    Buckets: "buckets",
+    Buckets: "uniformAccessFindings", // publicAccessFindings empty but still can map if needed
     "Firewall Rules": "publicRules",
     "GKE Clusters": "findings",
-    "SQL Instances": "instances",
+    "SQL Instances":
+      "cloudSqlScan.requireSslScan", // You can switch to others too
     "Cloud Run / Functions": "functionsAndRuns",
     "Load Balancers": "loadBalancers",
-    "Owner IAM Roles": "iamScan.ownerServiceAccountScan.ownerServiceAccounts",
+    "Owner IAM Roles":
+      "iamScan.ownerServiceAccountScan.ownerServiceAccounts",
     "VM Scan": "vmScan",
+    "Big Query Scan": "bigQueryScan.defaultCmekScan"
   };
 
   // ===============================================
@@ -113,7 +113,7 @@ export default function FullAudit({ file }) {
       formData.append("keyFile", file);
 
       const res = await client.post("/full-audit", formData, {
-        headers: { "Content-Type": "multipart/form-data" },
+        headers: { "Content-Type": "multipart/form-data" }
       });
 
       const normalizedResult = {};
@@ -173,7 +173,6 @@ export default function FullAudit({ file }) {
     // ================================
     if (name === "Owner IAM Roles") {
       const items = getNested(result[name], mapping[name]) || [];
-
       if (!items.length) return null;
 
       const colDefs = generateColumnDefs(items);
@@ -184,7 +183,7 @@ export default function FullAudit({ file }) {
 
           <div className={styles.subCard}>
             <h4 className={styles.subHeading}>High-Risk Owner Role Assignments</h4>
-            <AgTable rowData={items} columnDefs={colDefs} height={300} />
+            <AgTable rowData={items} columnDefs={colDefs} height={350} />
           </div>
         </div>
       );
@@ -211,7 +210,6 @@ export default function FullAudit({ file }) {
       </div>
     );
   };
-
 
   const allDataLoaded =
     Object.keys(result).length === resourceList.length && !loading;
