@@ -88,7 +88,7 @@ exports.checkGKEClusters = async (req, res) => {
         location: cluster.location,
         endpoint,
         privateNodes,
-        masterIpv4Cidr,
+        // masterIpv4Cidr,
         legacyAbacEnabled,
         workloadIdentityEnabled,
         shieldedNodesEnabled,
@@ -96,7 +96,7 @@ exports.checkGKEClusters = async (req, res) => {
         binaryAuthEnabled,
         authorizedNetworksEnabled: hasAuthorizedNetworks,
         exposureRisk,
-        issues,
+        // issues,
         recommendation:
           issues.length === 0
             ? "Cluster is well configured based on security best practices."
