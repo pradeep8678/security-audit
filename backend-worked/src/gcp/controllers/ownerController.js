@@ -37,7 +37,7 @@ exports.checkIAM = async (req, res) => {
 
     // Final response
     return res.json({
-      message: "IAM audit completed successfully",
+      // message: "IAM audit completed successfully",
       projectId,
       iamScan: {
         ownerServiceAccountScan: ownerSaScan,

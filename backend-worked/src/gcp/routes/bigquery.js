@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const multer = require('multer');
-const bucketController = require('../controllers/bucketController');
+const bigqueryController = require('../controllers/bigqueryController');
 
 // Memory storage to avoid saving sensitive key files
 const upload = multer({
@@ -10,6 +10,6 @@ const upload = multer({
 });
 
 // ✅ POST /api/list-buckets
-router.post('/list-buckets', upload.single('keyFile'), bucketController.auditBuckets);
+router.post('/list-bigquery', upload.single('keyFile'), bigqueryController.checkBigQuery);
 
 module.exports = router;

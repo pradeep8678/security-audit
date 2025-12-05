@@ -14,6 +14,7 @@ const ownerRoutes = require("./gcp/routes/owner");
 const lbRoutes = require("./gcp/routes/lbRoutes");
 const cloudrunRoutes = require("./gcp/routes/cloudrun");
 const fullAuditRoutes = require('./gcp/routes/fullAudit');
+const bigquery = require('./gcp/routes/bigquery');
 
 // -------------------------AWS--------------------------------------
 
@@ -59,6 +60,7 @@ app.use("/api", ownerRoutes);
 app.use("/api", lbRoutes);
 app.use("/api", cloudrunRoutes);
 app.use('/api', fullAuditRoutes);
+app.use('/api', bigquery);
 
 // -------------------------AWS--------------------------------------
 
