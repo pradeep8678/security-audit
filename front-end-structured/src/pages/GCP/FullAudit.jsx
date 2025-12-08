@@ -57,6 +57,16 @@ const getNested = (obj, path) => {
   return path.split(".").reduce((acc, key) => acc?.[key], obj);
 };
 
+// Helper: make a nice title from a scan key, e.g. vpcFlowLogsScan → Vpc Flow Logs Scan
+const prettifyScanKey = (key) => {
+  return key
+    .replace(/_/g, " ")
+    .replace(/([A-Z])/g, " $1")
+    .replace(/\s+/g, " ")
+    .trim()
+    .replace(/\b\w/g, (c) => c.toUpperCase());
+};
+
 // ===============================================
 // MAIN COMPONENT
 // ===============================================
@@ -67,7 +77,7 @@ export default function FullAudit({ file }) {
   const [selectedResource, setSelectedResource] = useState(null);
   const [showDropdown, setShowDropdown] = useState(false);
 
-  // Now includes NEW RESOURCE BigQuery Scan
+  // Includes NEW RESOURCES Big Query Scan + Network Scan
   const resourceList = [
     "Buckets",
     "Firewall Rules",
@@ -77,22 +87,22 @@ export default function FullAudit({ file }) {
     "Load Balancers",
     "Owner IAM Roles",
     "VM Scan",
-    "Big Query Scan"
+    "Big Query Scan",
+    "Network Scan",
   ];
 
-  // Mapping updated for new fields
+  // Mapping for simple "single-table" resources
   const mapping = {
-    Buckets: "uniformAccessFindings", // publicAccessFindings empty but still can map if needed
+    Buckets: "uniformAccessFindings", // publicAccessFindings can be added later if needed
     "Firewall Rules": "publicRules",
     "GKE Clusters": "findings",
-    "SQL Instances":
-      "cloudSqlScan.requireSslScan", // You can switch to others too
+    "SQL Instances": "cloudSqlScan.requireSslScan",
     "Cloud Run / Functions": "functionsAndRuns",
     "Load Balancers": "loadBalancers",
-    "Owner IAM Roles":
-      "iamScan.ownerServiceAccountScan.ownerServiceAccounts",
+    "Owner IAM Roles": "iamScan.ownerServiceAccountScan.ownerServiceAccounts",
     "VM Scan": "vmScan",
-    "Big Query Scan": "bigQueryScan.defaultCmekScan"
+    "Big Query Scan": "bigQueryScan.defaultCmekScan",
+    // Network Scan is handled as a special multi-table section like VM Scan
   };
 
   // ===============================================
@@ -113,7 +123,7 @@ export default function FullAudit({ file }) {
       formData.append("keyFile", file);
 
       const res = await client.post("/full-audit", formData, {
-        headers: { "Content-Type": "multipart/form-data" }
+        headers: { "Content-Type": "multipart/form-data" },
       });
 
       const normalizedResult = {};
@@ -135,8 +145,6 @@ export default function FullAudit({ file }) {
   // ===============================================
   const renderTable = (name) => {
     if (!result[name]) return null;
-
-    const field = mapping[name];
 
     // ================================
     // SPECIAL CASE → VM SCAN
@@ -169,6 +177,36 @@ export default function FullAudit({ file }) {
     }
 
     // ================================
+    // SPECIAL CASE → NETWORK SCAN
+    // ================================
+    if (name === "Network Scan") {
+      const networkScan = result[name].networkScan;
+      if (!networkScan) return <p>No Network data found</p>;
+
+      return (
+        <div className={styles.card}>
+          <h3 className={styles.cardTitle}>Network Security Findings</h3>
+
+          {Object.keys(networkScan).map((scanKey) => {
+            const items = networkScan[scanKey];
+
+            if (!Array.isArray(items) || items.length === 0) return null;
+
+            const colDefs = generateColumnDefs(items);
+            const heading = prettifyScanKey(scanKey);
+
+            return (
+              <div key={scanKey} className={styles.subCard}>
+                <h4 className={styles.subHeading}>{heading}</h4>
+                <AgTable rowData={items} columnDefs={colDefs} height={350} />
+              </div>
+            );
+          })}
+        </div>
+      );
+    }
+
+    // ================================
     // SPECIAL CASE → Owner IAM Roles
     // ================================
     if (name === "Owner IAM Roles") {
@@ -190,8 +228,11 @@ export default function FullAudit({ file }) {
     }
 
     // ================================
-    // NORMAL RESOURCES
+    // NORMAL RESOURCES (single table)
     // ================================
+    const field = mapping[name];
+    if (!field) return null;
+
     let items;
     if (field.includes(".")) {
       items = getNested(result[name], field);
