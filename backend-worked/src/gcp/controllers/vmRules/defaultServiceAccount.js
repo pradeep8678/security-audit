@@ -46,6 +46,6 @@ module.exports = function checkDefaultServiceAccount(instances) {
       riskyInstances.length > 0
         ? "Some VMs are using the default Compute Engine service account, which is not recommended."
         : "No VM is using the default service account. Good IAM practice!",
-    riskLevel: riskyInstances.length > 0 ? "HIGH" : "LOW", // overall risk
+    exposureRisk: riskyInstances.length > 0 ? "HIGH" : "LOW", // overall risk
   };
 };

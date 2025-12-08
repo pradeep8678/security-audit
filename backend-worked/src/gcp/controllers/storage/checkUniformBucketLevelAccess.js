@@ -43,7 +43,7 @@ async function checkUniformBucketLevelAccess(keyFile) {
           }
 
           let exposure = "None";
-          let riskLevel = "Low";
+          let exposureRisk = "Low";
 
           const isAllUsers = bindings.some((b) =>
             (b.members || []).includes("allUsers")
@@ -60,13 +60,13 @@ async function checkUniformBucketLevelAccess(keyFile) {
 
           if (isAllUsers) {
             exposure = "allUsers";
-            riskLevel = "High";
+            exposureRisk = "High";
           } else if (isAllAuthenticated) {
             exposure = "allAuthenticatedUsers";
-            riskLevel = "Medium";
+            exposureRisk = "Medium";
           } else if (hasCustomUsers) {
             exposure = "customUserBindings";
-            riskLevel = "Medium";
+            exposureRisk = "Medium";
           }
 
           nonUniformBuckets.push({
@@ -74,7 +74,7 @@ async function checkUniformBucketLevelAccess(keyFile) {
             location: bucket.location,
             storageClass: bucket.storageClass,
             access: exposure,
-            riskLevel,
+            exposureRisk,
             recommendation: `Enable Uniform Bucket-Level Access (UBLA) on "${bucket.name}" to enforce object-level permissions at the bucket level and reduce access risks.`,
           });
         }

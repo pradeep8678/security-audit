@@ -40,6 +40,6 @@ module.exports = function checkIpForwarding(instances) {
       riskyInstances.length > 0
         ? "Some VMs have IP forwarding enabled, which may expose them to unintended traffic routing risks."
         : "All VMs have IP forwarding disabled — ideal configuration for most workloads.",
-    riskLevel: riskyInstances.length > 0 ? "HIGH" : "LOW", // overall risk
+    exposureRisk: riskyInstances.length > 0 ? "HIGH" : "LOW", // overall risk
   };
 };

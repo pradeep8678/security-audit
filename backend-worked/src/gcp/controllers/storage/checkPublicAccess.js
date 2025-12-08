@@ -47,7 +47,7 @@ async function checkPublicAccess(keyFile) {
             location: bucket.location,
             storageClass: bucket.storageClass,
             access: exposure,
-            riskLevel: risk,
+            exposureRisk: risk,
             recommendation: `Bucket "${bucket.name}" is publicly accessible (${exposure}). Restrict access via IAM or make it private immediately.`,
           });
         }
