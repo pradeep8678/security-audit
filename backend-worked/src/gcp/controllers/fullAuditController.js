@@ -14,6 +14,7 @@ const lbController = require("./lbController");
 const ownerController = require("./ownerController");
 const gcpController = require("./gcpController"); // VM + additional GCP audits
 const bigqueryController = require("./bigqueryController"); 
+const networkController = require("./networkController"); 
 
 /**
  * Utility to execute any Express-style controller function and capture its JSON response
@@ -93,6 +94,7 @@ exports.runFullAudit = async (req, res) => {
       invokeController("Owner IAM Roles", ownerController.checkIAM, file),
       invokeController("VM Scan", gcpController.listVMs, file),
       invokeController("Big Query Scan", bigqueryController.checkBigQuery, file),
+      invokeController("Network Scan", networkController.checkNETWORK, file),
    
     ]);
 
