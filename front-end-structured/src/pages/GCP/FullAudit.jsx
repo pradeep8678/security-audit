@@ -15,7 +15,10 @@ const generateColumnDefs = (data = []) => {
   data.forEach((row) => Object.keys(row).forEach((key) => allKeys.add(key)));
 
   return [...allKeys].map((key) => ({
-    headerName: key.replace(/([A-Z])/g, " $1").replace(/_/g, " ").toUpperCase(),
+    headerName: key
+      .replace(/([A-Z])/g, " $1")
+      .replace(/_/g, " ")
+      .toUpperCase(),
     field: key,
     minWidth: 180,
     sortable: true,
@@ -77,7 +80,7 @@ export default function FullAudit({ file }) {
   const [selectedResource, setSelectedResource] = useState(null);
   const [showDropdown, setShowDropdown] = useState(false);
 
-  // Includes NEW RESOURCES Big Query Scan + Network Scan
+  // Includes NEW RESOURCES Big Query Scan + Network Scan + Logging Scan
   const resourceList = [
     "Buckets",
     "Firewall Rules",
@@ -89,6 +92,7 @@ export default function FullAudit({ file }) {
     "VM Scan",
     "Big Query Scan",
     "Network Scan",
+    "Logging Scan",
   ];
 
   // Mapping for simple "single-table" resources
@@ -100,9 +104,9 @@ export default function FullAudit({ file }) {
     "Cloud Run / Functions": "functionsAndRuns",
     "Load Balancers": "loadBalancers",
     "Owner IAM Roles": "iamScan.ownerServiceAccountScan.ownerServiceAccounts",
-    "VM Scan": "vmScan",
+    "VM Scan": "vmScan", // handled as special multi-table
     "Big Query Scan": "bigQueryScan.defaultCmekScan",
-    // Network Scan is handled as a special multi-table section like VM Scan
+    // Network Scan & Logging Scan are handled as special multi-table sections
   };
 
   // ===============================================
@@ -153,15 +157,28 @@ export default function FullAudit({ file }) {
       const vmScan = result[name].vmScan;
       if (!vmScan) return <p>No VM data found</p>;
 
+      const ruleKeys = Object.keys(vmScan);
+      const anyRows = ruleKeys.some((k) => {
+        const r = vmScan[k];
+        const items = r?.affectedInstances || r?.instances;
+        return Array.isArray(items) && items.length > 0;
+      });
+
       return (
         <div className={styles.card}>
           <h3 className={styles.cardTitle}>VM Security Findings</h3>
 
-          {Object.keys(vmScan).map((ruleKey) => {
-            const rule = vmScan[ruleKey];
-            const items = rule.affectedInstances || rule.instances;
+          {!anyRows && (
+            <p className={styles.infoText}>
+              ✅ No risky VM findings detected. All VM security checks passed.
+            </p>
+          )}
 
-            if (!items || items.length === 0) return null;
+          {ruleKeys.map((ruleKey) => {
+            const rule = vmScan[ruleKey];
+            let items = rule.affectedInstances || rule.instances;
+
+            if (!Array.isArray(items) || items.length === 0) return null;
 
             const colDefs = generateColumnDefs(items);
 
@@ -188,9 +205,47 @@ export default function FullAudit({ file }) {
           <h3 className={styles.cardTitle}>Network Security Findings</h3>
 
           {Object.keys(networkScan).map((scanKey) => {
-            const items = networkScan[scanKey];
+            let items = networkScan[scanKey];
 
-            if (!Array.isArray(items) || items.length === 0) return null;
+            if (!items) return null;
+            if (!Array.isArray(items)) {
+              items = [items];
+            }
+            if (!items.length) return null;
+
+            const colDefs = generateColumnDefs(items);
+            const heading = prettifyScanKey(scanKey);
+
+            return (
+              <div key={scanKey} className={styles.subCard}>
+                <h4 className={styles.subHeading}>{heading}</h4>
+                <AgTable rowData={items} columnDefs={colDefs} height={350} />
+              </div>
+            );
+          })}
+        </div>
+      );
+    }
+
+    // ================================
+    // SPECIAL CASE → LOGGING SCAN
+    // ================================
+    if (name === "Logging Scan") {
+      const loggingScan = result[name].loggingScan;
+      if (!loggingScan) return <p>No Logging data found</p>;
+
+      return (
+        <div className={styles.card}>
+          <h3 className={styles.cardTitle}>Logging & Monitoring Findings</h3>
+
+          {Object.keys(loggingScan).map((scanKey) => {
+            let items = loggingScan[scanKey];
+
+            if (!items) return null;
+            if (!Array.isArray(items)) {
+              items = [items];
+            }
+            if (!items.length) return null;
 
             const colDefs = generateColumnDefs(items);
             const heading = prettifyScanKey(scanKey);
@@ -220,7 +275,9 @@ export default function FullAudit({ file }) {
           <h3 className={styles.cardTitle}>Owner IAM Roles Security Findings</h3>
 
           <div className={styles.subCard}>
-            <h4 className={styles.subHeading}>High-Risk Owner Role Assignments</h4>
+            <h4 className={styles.subHeading}>
+              High-Risk Owner Role Assignments
+            </h4>
             <AgTable rowData={items} columnDefs={colDefs} height={350} />
           </div>
         </div>
@@ -240,7 +297,7 @@ export default function FullAudit({ file }) {
       items = result[name][field];
     }
 
-    if (!items || items.length === 0) return null;
+    if (!items || !Array.isArray(items) || items.length === 0) return null;
 
     const colDefs = generateColumnDefs(items);
 
@@ -252,8 +309,8 @@ export default function FullAudit({ file }) {
     );
   };
 
-  const allDataLoaded =
-    Object.keys(result).length === resourceList.length && !loading;
+  // More robust: show data as soon as we have *any* result and not loading
+  const allDataLoaded = Object.keys(result).length > 0 && !loading;
 
   return (
     <div className={styles.container}>
