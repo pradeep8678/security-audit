@@ -15,6 +15,9 @@ const ownerController = require("./ownerController");
 const gcpController = require("./gcpController"); // VM + additional GCP audits
 const bigqueryController = require("./bigqueryController"); 
 const networkController = require("./networkController"); 
+const loggingController = require("./loggingController"); 
+
+const { logging } = require("googleapis/build/src/apis/logging");
 
 /**
  * Utility to execute any Express-style controller function and capture its JSON response
@@ -95,6 +98,7 @@ exports.runFullAudit = async (req, res) => {
       invokeController("VM Scan", gcpController.listVMs, file),
       invokeController("Big Query Scan", bigqueryController.checkBigQuery, file),
       invokeController("Network Scan", networkController.checkNETWORK, file),
+      invokeController("Logging Scan", loggingController.checkLogging, file),
    
     ]);
 

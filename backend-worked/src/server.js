@@ -16,6 +16,7 @@ const cloudrunRoutes = require("./gcp/routes/cloudrun");
 const fullAuditRoutes = require('./gcp/routes/fullAudit');
 const bigquery = require('./gcp/routes/bigquery');
 const network = require('./gcp/routes/network');
+const logging = require('./gcp/routes/logging');
 
 // -------------------------AWS--------------------------------------
 
@@ -63,6 +64,7 @@ app.use("/api", cloudrunRoutes);
 app.use('/api', fullAuditRoutes);
 app.use('/api', bigquery);
 app.use('/api', network);
+app.use('/api', logging);
 
 // -------------------------AWS--------------------------------------
 
