@@ -1,15 +1,20 @@
 // loggingRules/cloudAssetInventoryCheck.js
 const { google } = require("googleapis");
 
-async function checkCloudAssetInventory(keyFile) {
+async function checkCloudAssetInventory(keyFile, passedAuthClient = null) {
   const findings = [];
   try {
-    const auth = new google.auth.GoogleAuth({
-      credentials: keyFile,
-      scopes: ["https://www.googleapis.com/auth/cloud-platform"],
-    });
+    let authClient;
+    if (passedAuthClient) {
+      authClient = passedAuthClient;
+    } else {
+      const auth = new google.auth.GoogleAuth({
+        credentials: keyFile,
+        scopes: ["https://www.googleapis.com/auth/cloud-platform"],
+      });
 
-    const authClient = await auth.getClient();
+      authClient = await auth.getClient();
+    }
     google.options({ auth: authClient });
 
     const asset = google.cloudasset("v1");
@@ -22,7 +27,7 @@ async function checkCloudAssetInventory(keyFile) {
     } catch (err) {
       findings.push({
         issue: "Cloud Asset Inventory seems disabled",
-        exposureRisk: "Medium",
+        exposureRisk: "🟠 Medium",
         recommendation: "Enable Cloud Asset Inventory API.",
       });
     }

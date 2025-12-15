@@ -5,15 +5,27 @@ const { google } = require("googleapis");
  * @param {Object} keyFile - Parsed GCP service account JSON
  * @returns {Array} - Buckets without UBLA enabled + exposure + risk
  */
-async function checkUniformBucketLevelAccess(keyFile) {
+/**
+ * 🔧 Check if Uniform Bucket-Level Access (UBLA) is disabled
+ * @param {Object} keyFile - Parsed GCP service account JSON
+ * @param {Object} [passedAuthClient] - Optional pre-authenticated Google Auth client
+ * @returns {Array} - Buckets without UBLA enabled + exposure + risk
+ */
+async function checkUniformBucketLevelAccess(keyFile, passedAuthClient = null) {
   try {
-    const auth = new google.auth.GoogleAuth({
-      credentials: keyFile,
-      scopes: ["https://www.googleapis.com/auth/cloud-platform"],
-    });
+    let authClient;
+
+    if (passedAuthClient) {
+      authClient = passedAuthClient;
+    } else {
+      const auth = new google.auth.GoogleAuth({
+        credentials: keyFile,
+        scopes: ["https://www.googleapis.com/auth/cloud-platform"],
+      });
+      authClient = await auth.getClient();
+    }
 
     const storage = google.storage("v1");
-    const authClient = await auth.getClient();
     google.options({ auth: authClient });
 
     const projectId = keyFile.project_id;
@@ -60,13 +72,13 @@ async function checkUniformBucketLevelAccess(keyFile) {
 
           if (isAllUsers) {
             exposure = "allUsers";
-            exposureRisk = "High";
+            exposureRisk = "🔴 High";
           } else if (isAllAuthenticated) {
             exposure = "allAuthenticatedUsers";
-            exposureRisk = "Medium";
+            exposureRisk = "🟠 Medium";
           } else if (hasCustomUsers) {
             exposure = "customUserBindings";
-            exposureRisk = "Medium";
+            exposureRisk = "🟠 Medium";
           }
 
           nonUniformBuckets.push({

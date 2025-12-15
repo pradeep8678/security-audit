@@ -28,7 +28,7 @@ module.exports = function checkShieldedVM(instances) {
           vTPMEnabled: vTPM,
           integrityMonitoringEnabled: integrityMonitoring
         },
-        exposureRisk: "HIGH", // per-instance risk
+        exposureRisk: "🔴 HIGH", // per-instance risk
         recommendation:
           "Enable all Shielded VM features (Secure Boot, vTPM, Integrity Monitoring) for maximum protection."
       });
@@ -49,6 +49,6 @@ module.exports = function checkShieldedVM(instances) {
       riskyInstances.length > 0
         ? "Some VMs do not have complete Shielded VM protection enabled, increasing exposure to low-level attacks."
         : "All VMs have full Shielded VM protection enabled.",
-    exposureRisk: riskyInstances.length > 0 ? "HIGH" : "LOW" // overall risk
+    exposureRisk: riskyInstances.length > 0 ? "🔴 HIGH" : "🟡 LOW" // overall risk
   };
 };

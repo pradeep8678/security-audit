@@ -43,7 +43,7 @@ module.exports = function checkOsLogin(instances, projectMetadata) {
         machineType: vm.machineType,
         status: vm.status,
         osLoginStatus: "Disabled (Not Enforced)",
-        exposureRisk: "HIGH", // per-instance risk
+        exposureRisk: "🔴 HIGH", // per-instance risk
         recommendation:
           "Enable OS Login to enforce IAM-based SSH access and eliminate unmanaged SSH keys.",
       });
@@ -64,6 +64,6 @@ module.exports = function checkOsLogin(instances, projectMetadata) {
       riskyInstances.length > 0
         ? "Some VMs do not enforce OS Login, allowing unmanaged SSH keys and increasing the risk of unauthorized access."
         : "All VMs enforce OS Login. Centralized IAM-based SSH access is properly configured.",
-    exposureRisk: riskyInstances.length > 0 ? "HIGH" : "LOW", // overall risk
+    exposureRisk: riskyInstances.length > 0 ? "🔴 HIGH" : "🟡 LOW", // overall risk
   };
 };

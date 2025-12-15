@@ -1,18 +1,23 @@
 // loggingRules/loadBalancerLoggingCheck.js
 const { google } = require("googleapis");
 
-async function checkLoadBalancerLogging(keyFile) {
+async function checkLoadBalancerLogging(keyFile, passedAuthClient = null) {
   const findings = [];
 
   try {
     const compute = google.compute("v1");
 
-    const auth = new google.auth.GoogleAuth({
-      credentials: keyFile,
-      scopes: ["https://www.googleapis.com/auth/cloud-platform"],
-    });
+    let authClient;
+    if (passedAuthClient) {
+      authClient = passedAuthClient;
+    } else {
+      const auth = new google.auth.GoogleAuth({
+        credentials: keyFile,
+        scopes: ["https://www.googleapis.com/auth/cloud-platform"],
+      });
 
-    const authClient = await auth.getClient();
+      authClient = await auth.getClient();
+    }
     google.options({ auth: authClient });
 
     const projectId = keyFile.project_id;
@@ -28,7 +33,7 @@ async function checkLoadBalancerLogging(keyFile) {
         findings.push({
           backendService: b.name,
           issue: "Load balancer logging disabled",
-          exposureRisk: "Medium",
+          exposureRisk: "🟠 Medium",
           recommendation: "Enable logging in backendService.logConfig.",
         });
       }

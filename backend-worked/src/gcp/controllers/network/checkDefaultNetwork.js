@@ -5,15 +5,20 @@ const { google } = require("googleapis");
  * @param {Object} keyFile - Parsed GCP service account JSON
  * @returns {Array} - List of vulnerabilities
  */
-async function checkDefaultNetwork(keyFile) {
+async function checkDefaultNetwork(keyFile, passedAuthClient = null) {
   try {
-    const auth = new google.auth.GoogleAuth({
-      credentials: keyFile,
-      scopes: ["https://www.googleapis.com/auth/cloud-platform"],
-    });
+    let authClient;
+    if (passedAuthClient) {
+      authClient = passedAuthClient;
+    } else {
+      const auth = new google.auth.GoogleAuth({
+        credentials: keyFile,
+        scopes: ["https://www.googleapis.com/auth/cloud-platform"],
+      });
+      authClient = await auth.getClient();
+    }
 
     const compute = google.compute("v1");
-    const authClient = await auth.getClient();
     google.options({ auth: authClient });
 
     const projectId = keyFile.project_id;
@@ -30,7 +35,7 @@ async function checkDefaultNetwork(keyFile) {
           name: net.name,
           autoCreateSubnetworks: net.autoCreateSubnetworks,
           exposure: "default-network-present",
-          exposureRisk: "Medium",
+          exposureRisk: "🟠 Medium",
           recommendation:
             `Delete the default network in project "${projectId}". ` +
             `Default networks come with overly permissive firewall rules ` +

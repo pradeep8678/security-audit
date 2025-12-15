@@ -14,7 +14,7 @@ module.exports = async function checkSqlRequireSsl(auth, projectId) {
         results.push({
           instance: inst.name,
           region: inst.region,
-          exposureRisk: "High",
+          exposureRisk: "🔴 High",
           issue: "Cloud SQL does NOT enforce SSL/TLS for incoming connections.",
           recommendation:
             "Enable 'Require SSL' in Cloud SQL > Connections settings to enforce encrypted connections.",

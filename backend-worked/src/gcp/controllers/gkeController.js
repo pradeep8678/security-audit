@@ -2,19 +2,24 @@ const { google } = require("googleapis");
 
 exports.checkGKEClusters = async (req, res) => {
   try {
-    if (!req.file) {
+    let keyFile, authClient, projectId;
+
+    if (req.parsedKey && req.authClient) {
+      keyFile = req.parsedKey;
+      authClient = req.authClient;
+      projectId = keyFile.project_id;
+    } else if (req.file) {
+      keyFile = JSON.parse(req.file.buffer.toString());
+      projectId = keyFile.project_id;
+      const auth = new google.auth.GoogleAuth({
+        credentials: keyFile,
+        scopes: ["https://www.googleapis.com/auth/cloud-platform"],
+      });
+      authClient = await auth.getClient();
+    } else {
       return res.status(400).json({ error: "No key file uploaded" });
     }
 
-    const keyFile = JSON.parse(req.file.buffer.toString());
-    const projectId = keyFile.project_id;
-
-    const auth = new google.auth.GoogleAuth({
-      credentials: keyFile,
-      scopes: ["https://www.googleapis.com/auth/cloud-platform"],
-    });
-
-    const authClient = await auth.getClient();
     google.options({ auth: authClient });
 
     const container = google.container("v1");

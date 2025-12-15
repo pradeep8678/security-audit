@@ -14,17 +14,27 @@ const checkDnsZoneRsaSha1 = require("./network/checkDnsZoneRsaSha1");
 
 exports.checkNETWORK = async (req, res) => {
   try {
-    if (!req.file) {
+    let keyFile, client, projectId;
+
+    if (req.parsedKey && req.authClient) {
+      keyFile = req.parsedKey;
+      client = req.authClient;
+      projectId = keyFile.project_id;
+    } else if (req.file) {
+      keyFile = JSON.parse(req.file.buffer.toString("utf8"));
+      projectId = keyFile.project_id;
+      const auth = new google.auth.GoogleAuth({
+        credentials: keyFile,
+        scopes: ["https://www.googleapis.com/auth/cloud-platform"],
+      });
+      client = await auth.getClient();
+    } else {
       return res.status(400).json({ error: "Key file is required" });
     }
 
-    // Parse uploaded service account JSON
-    const keyFile = JSON.parse(req.file.buffer.toString("utf8"));
-    const projectId = keyFile.project_id;
-
     console.log(`🌐 Running NETWORK Audit for project: ${projectId}`);
 
-    // Run all scans in parallel, passing keyFile directly
+    // Run all scans in parallel, passing keyFile AND client
     const [
       defaultNetworkScan,
       legacyNetworkScan,
@@ -35,14 +45,14 @@ exports.checkNETWORK = async (req, res) => {
       rsaSha1KeyScan,
       rsaSha1ZoneScan
     ] = await Promise.all([
-      checkDefaultNetwork(keyFile),
-      checkLegacyNetworks(keyFile),
-      checkVpcFlowLogs(keyFile),
-      checkSshOpenToInternet(keyFile),
-      checkRdpAccess(keyFile),
-      checkDnssecEnabled(keyFile),
-      checkDnsRsaSha1(keyFile),
-      checkDnsZoneRsaSha1(keyFile)
+      checkDefaultNetwork(keyFile, client),
+      checkLegacyNetworks(keyFile, client),
+      checkVpcFlowLogs(keyFile, client),
+      checkSshOpenToInternet(keyFile, client),
+      checkRdpAccess(keyFile, client),
+      checkDnssecEnabled(keyFile, client),
+      checkDnsRsaSha1(keyFile, client),
+      checkDnsZoneRsaSha1(keyFile, client)
     ]);
 
     // Return consolidated results

@@ -1,5 +1,5 @@
 const { google } = require("googleapis");
-const checkDefaultServiceAccount = require("./vmRules/defaultServiceAccount"); 
+const checkDefaultServiceAccount = require("./vmRules/defaultServiceAccount");
 const checkShieldedVM = require("./vmRules/shieldedVmCheck");
 const checkOsLogin = require("./vmRules/osLoginCheck");
 const checkBlockProjectSSHKeys = require("./vmRules/blockProjectSshKeysCheck");
@@ -7,23 +7,30 @@ const checkIpForwarding = require("./vmRules/ipForwardingCheck");
 
 exports.listVMs = async (req, res) => {
   try {
-    if (!req.file) {
+    let keyFile, authClient, projectId;
+
+    if (req.parsedKey && req.authClient) {
+      keyFile = req.parsedKey;
+      authClient = req.authClient;
+      projectId = keyFile.project_id;
+    } else if (req.file) {
+      keyFile = JSON.parse(req.file.buffer.toString("utf8"));
+      projectId = keyFile.project_id;
+      const auth = new google.auth.GoogleAuth({
+        credentials: keyFile,
+        scopes: ["https://www.googleapis.com/auth/cloud-platform"],
+      });
+      authClient = await auth.getClient();
+    } else {
       return res.status(400).json({ error: "No key file uploaded" });
     }
 
-    const keyFile = JSON.parse(req.file.buffer.toString("utf8"));
-
-    const auth = new google.auth.GoogleAuth({
-      credentials: keyFile,
-      scopes: ["https://www.googleapis.com/auth/cloud-platform"],
-    });
-
     const compute = google.compute({
       version: "v1",
-      auth: await auth.getClient(),
+      auth: authClient,
     });
 
-    const projectId = keyFile.project_id;
+
     console.log(`🚀 Scanning Compute Engine instances for project: ${projectId}`);
 
     const projectInfo = await compute.projects.get({ project: projectId });
@@ -51,7 +58,7 @@ exports.listVMs = async (req, res) => {
             networkInterfaces: instance.networkInterfaces || [],
             shieldedVMConfig: instance.shieldedInstanceConfig || {},
             metadataItems: instance.metadata?.items || [],
-            canIpForward: instance.canIpForward || false 
+            canIpForward: instance.canIpForward || false
           };
 
           allVMs.push(vmData);
@@ -79,9 +86,9 @@ exports.listVMs = async (req, res) => {
 
       request = response.data.nextPageToken
         ? compute.instances.aggregatedList({
-            project: projectId,
-            pageToken: response.data.nextPageToken,
-          })
+          project: projectId,
+          pageToken: response.data.nextPageToken,
+        })
         : null;
     }
 

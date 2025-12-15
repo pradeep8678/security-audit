@@ -16,7 +16,7 @@ module.exports = async function checkSqlAutomatedBackups(auth, projectId) {
         results.push({
           instance: inst.name,
           region: inst.region,
-          exposureRisk: "Medium",
+          exposureRisk: "🟠 Medium",
           issue: "Automated Backups are NOT enabled for this Cloud SQL instance.",
           recommendation:
             "Enable automated backups to prevent data loss from failures or corruption.",

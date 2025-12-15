@@ -31,7 +31,7 @@ module.exports = async function checkUserManagedKeys(auth, projectId) {
         hasUserManagedKeys,
         userManagedKeyCount: userManagedKeys.length,
         // status: hasUserManagedKeys ? "FAIL" : "PASS",
-        exposureRisk: hasUserManagedKeys ? "High" : "Low",
+        exposureRisk: hasUserManagedKeys ? "🔴 High" : "🟡 Low",
         recommendation: hasUserManagedKeys
           ? "Remove user-managed service account keys immediately. Prefer Google-managed keys or workload identity federation."
           : "No user-managed keys found. Compliant.",

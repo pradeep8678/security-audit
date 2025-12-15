@@ -1,15 +1,20 @@
 // loggingRules/cloudDnsLoggingCheck.js
 const { google } = require("googleapis");
 
-async function checkCloudDnsLogging(keyFile) {
+async function checkCloudDnsLogging(keyFile, passedAuthClient = null) {
   const findings = [];
 
   try {
-    const auth = new google.auth.GoogleAuth({
-      credentials: keyFile,
-      scopes: ["https://www.googleapis.com/auth/cloud-platform"],
-    });
-    const authClient = await auth.getClient();
+    let authClient;
+    if (passedAuthClient) {
+      authClient = passedAuthClient;
+    } else {
+      const auth = new google.auth.GoogleAuth({
+        credentials: keyFile,
+        scopes: ["https://www.googleapis.com/auth/cloud-platform"],
+      });
+      authClient = await auth.getClient();
+    }
     google.options({ auth: authClient });
 
     const dns = google.dns("v1");
@@ -23,7 +28,7 @@ async function checkCloudDnsLogging(keyFile) {
         findings.push({
           policy: p.name,
           issue: "DNS logging disabled",
-          exposureRisk: "Medium",
+          exposureRisk: "🟠 Medium",
           recommendation: "Enable DNS logging for all networks.",
         });
       }

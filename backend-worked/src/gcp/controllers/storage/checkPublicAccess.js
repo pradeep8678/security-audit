@@ -5,15 +5,27 @@ const { google } = require("googleapis");
  * @param {Object} keyFile - Parsed GCP service account JSON
  * @returns {Array} - List of buckets that are publicly accessible
  */
-async function checkPublicAccess(keyFile) {
+/**
+ * 🔒 Check if buckets are publicly accessible
+ * @param {Object} keyFile - Parsed GCP service account JSON
+ * @param {Object} [passedAuthClient] - Optional pre-authenticated Google Auth client
+ * @returns {Array} - List of buckets that are publicly accessible
+ */
+async function checkPublicAccess(keyFile, passedAuthClient = null) {
   try {
-    const auth = new google.auth.GoogleAuth({
-      credentials: keyFile,
-      scopes: ["https://www.googleapis.com/auth/cloud-platform"],
-    });
+    let authClient;
+
+    if (passedAuthClient) {
+      authClient = passedAuthClient;
+    } else {
+      const auth = new google.auth.GoogleAuth({
+        credentials: keyFile,
+        scopes: ["https://www.googleapis.com/auth/cloud-platform"],
+      });
+      authClient = await auth.getClient();
+    }
 
     const storage = google.storage("v1");
-    const authClient = await auth.getClient();
     google.options({ auth: authClient });
 
     const projectId = keyFile.project_id;
@@ -35,10 +47,10 @@ async function checkPublicAccess(keyFile) {
 
         if (isAllUsers) {
           exposure = "allUsers";
-          risk = "High";
+          risk = "🔴 High";
         } else if (isAllAuthenticated) {
           exposure = "allAuthenticatedUsers";
-          risk = "Medium";
+          risk = "🟠 Medium";
         }
 
         if (exposure) {

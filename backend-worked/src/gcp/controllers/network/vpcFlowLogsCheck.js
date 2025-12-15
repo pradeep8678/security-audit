@@ -6,16 +6,21 @@ const { google } = require("googleapis");
  * @param {Object} keyFile - Parsed GCP service account JSON
  * @returns {Array} - Subnets without VPC Flow Logs enabled
  */
-async function checkVpcFlowLogs(keyFile) {
+async function checkVpcFlowLogs(keyFile, passedAuthClient = null) {
   const compute = google.compute("v1");
   const findings = [];
 
   try {
-    const auth = new google.auth.GoogleAuth({
-      credentials: keyFile,
-      scopes: ["https://www.googleapis.com/auth/cloud-platform"],
-    });
-    const authClient = await auth.getClient();
+    let authClient;
+    if (passedAuthClient) {
+      authClient = passedAuthClient;
+    } else {
+      const auth = new google.auth.GoogleAuth({
+        credentials: keyFile,
+        scopes: ["https://www.googleapis.com/auth/cloud-platform"],
+      });
+      authClient = await auth.getClient();
+    }
     google.options({ auth: authClient });
 
     const projectId = keyFile.project_id;
@@ -32,6 +37,9 @@ async function checkVpcFlowLogs(keyFile) {
       const subs = regionData.subnetworks || [];
 
       subs.forEach((subnet) => {
+        // Skip default networks or auto-generated ones if desired, though usually defaulting to explicit "default" name check
+        if (subnet.network && subnet.network.endsWith("/default")) return;
+
         const flowLogsEnabled = subnet.enableFlowLogs === true;
 
         if (!flowLogsEnabled) {
@@ -40,7 +48,7 @@ async function checkVpcFlowLogs(keyFile) {
             network: subnet.network,
             region: subnet.region,
             access: "vpc-flow-logs-disabled",
-            exposureRisk: "Medium",
+            exposureRisk: "🟠 Medium",
             recommendation: `Enable VPC Flow Logs for subnet "${subnet.name}" to improve visibility, security analysis, and incident response.`,
           });
         }

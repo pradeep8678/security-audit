@@ -2,23 +2,27 @@ const { google } = require("googleapis");
 
 exports.scanFirewallRules = async (req, res) => {
   try {
-    if (!req.file) {
+    let keyFile, authClient, projectId;
+
+    if (req.parsedKey && req.authClient) {
+      keyFile = req.parsedKey;
+      authClient = req.authClient;
+      projectId = keyFile.project_id;
+    } else if (req.file) {
+      keyFile = JSON.parse(req.file.buffer.toString());
+      projectId = keyFile.project_id;
+      const auth = new google.auth.GoogleAuth({
+        credentials: keyFile,
+        scopes: ["https://www.googleapis.com/auth/cloud-platform"],
+      });
+      authClient = await auth.getClient();
+    } else {
       return res.status(400).json({ error: "No key file uploaded" });
     }
 
-    // Parse uploaded JSON key
-    const keyFile = JSON.parse(req.file.buffer.toString());
-
-    const auth = new google.auth.GoogleAuth({
-      credentials: keyFile,
-      scopes: ["https://www.googleapis.com/auth/cloud-platform"],
-    });
-
-    const authClient = await auth.getClient();
     google.options({ auth: authClient });
 
     const compute = google.compute("v1");
-    const projectId = keyFile.project_id;
 
     // Fetch all firewall rules
     const response = await compute.firewalls.list({
@@ -49,11 +53,14 @@ exports.scanFirewallRules = async (req, res) => {
 
     // Check rules open to public Internet
     const publicRules = rules
-      .filter(rule =>
-        rule.sourceRanges?.some(r =>
+      .filter(rule => {
+        // EXCLUDE default rules (name starts with "default-")
+        if (rule.name.startsWith("default-")) return false;
+        // Also filter by sourceRanges as before
+        return rule.sourceRanges?.some(r =>
           r === "0.0.0.0/0" || r === "::/0"
-        )
-      )
+        );
+      })
       .map(rule => {
         const openPorts = (rule.allowed || [])
           .flatMap(a =>
@@ -64,6 +71,12 @@ exports.scanFirewallRules = async (req, res) => {
         const isPublic = true;
         const exposureRisk = getExposureRisk(rule, isPublic, openPorts);
 
+        // Add icons to risk
+        let riskWithIcon = exposureRisk;
+        if (exposureRisk === "High") riskWithIcon = "🔴 High";
+        if (exposureRisk === "Medium") riskWithIcon = "🟠 Medium";
+        if (exposureRisk === "Low") riskWithIcon = "🟡 Low";
+
         return {
           name: rule.name,
           direction: rule.direction,
@@ -73,7 +86,7 @@ exports.scanFirewallRules = async (req, res) => {
           targetTags: rule.targetTags || [],
           disabled: rule.disabled || false,
           openPorts,
-          exposureRisk,
+          exposureRisk: riskWithIcon,
           recommendation:
             exposureRisk === "High"
               ? `Rule "${rule.name}" is HIGH-RISK — restrict or remove public access to SSH/RDP/DB ports.`

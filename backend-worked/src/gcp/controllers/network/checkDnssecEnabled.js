@@ -5,15 +5,20 @@ const { google } = require("googleapis");
  * @param {Object} keyFile - Parsed GCP service account JSON
  * @returns {Array} - DNS zones where DNSSEC is NOT enabled
  */
-async function checkDnssecEnabled(keyFile) {
+async function checkDnssecEnabled(keyFile, passedAuthClient = null) {
   try {
-    const auth = new google.auth.GoogleAuth({
-      credentials: keyFile,
-      scopes: ["https://www.googleapis.com/auth/cloud-platform"],
-    });
+    let authClient;
+    if (passedAuthClient) {
+      authClient = passedAuthClient;
+    } else {
+      const auth = new google.auth.GoogleAuth({
+        credentials: keyFile,
+        scopes: ["https://www.googleapis.com/auth/cloud-platform"],
+      });
+      authClient = await auth.getClient();
+    }
 
     const dns = google.dns("v1");
-    const authClient = await auth.getClient();
     google.options({ auth: authClient });
 
     const projectId = keyFile.project_id;
@@ -37,7 +42,7 @@ async function checkDnssecEnabled(keyFile) {
           dnsName: zone.dnsName,
           type: "Cloud DNS",
           access: "dnssec-disabled",
-          exposureRisk: "High",
+          exposureRisk: "🔴 High",
           recommendation: `DNSSEC is NOT enabled for DNS zone "${zone.name}". ` +
             `Enable DNSSEC to protect domain integrity and prevent DNS spoofing attacks.`,
         });

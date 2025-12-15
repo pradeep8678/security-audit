@@ -14,32 +14,38 @@ const checkLoadBalancerLogging = require("./loggingRules/loadBalancerLoggingChec
 
 exports.checkLogging = async (req, res) => {
   try {
-    if (!req.file) return res.status(400).json({ error: "Key file is required" });
+    let keyFile, client, projectId;
 
-    const keyFile = JSON.parse(req.file.buffer.toString("utf8"));
-    const projectId = keyFile.project_id;
+    if (req.parsedKey && req.authClient) {
+      keyFile = req.parsedKey;
+      client = req.authClient;
+      projectId = keyFile.project_id;
+    } else if (req.file) {
+      keyFile = JSON.parse(req.file.buffer.toString("utf8"));
+      projectId = keyFile.project_id;
+      const auth = new google.auth.GoogleAuth({
+        credentials: keyFile,
+        scopes: ["https://www.googleapis.com/auth/cloud-platform"],
+      });
+      client = await auth.getClient();
+    } else {
+      return res.status(400).json({ error: "Key file is required" });
+    }
 
     console.log(`🚀 Running LOGGING Audit for project: ${projectId}`);
 
-    // Initialize Google Auth
-    const auth = new google.auth.GoogleAuth({
-      credentials: keyFile,
-      scopes: ["https://www.googleapis.com/auth/cloud-platform"],
-    });
-
-    const client = await auth.getClient();
     google.options({ auth: client });
 
     // Execute logging checks
-    const cloudAuditScan = await checkCloudAuditLogging(keyFile);
-    const logSinkScan = await checkLogSinks(keyFile);
-    const bucketRetentionScan = await checkBucketRetentionLock(keyFile);
-    const logMetricAlertsScan = await checkLogMetricAlerts(keyFile);
-    const dnsLoggingScan = await checkCloudDnsLogging(keyFile);
-    const assetInventoryScan = await checkCloudAssetInventory(keyFile);
-    const accessTransparencyScan = await checkAccessTransparency(keyFile);
-    const accessApprovalScan = await checkAccessApproval(keyFile);
-    const loadBalancerLoggingScan = await checkLoadBalancerLogging(keyFile);
+    const cloudAuditScan = await checkCloudAuditLogging(keyFile, client);
+    const logSinkScan = await checkLogSinks(keyFile, client);
+    const bucketRetentionScan = await checkBucketRetentionLock(keyFile, client);
+    const logMetricAlertsScan = await checkLogMetricAlerts(keyFile, client);
+    const dnsLoggingScan = await checkCloudDnsLogging(keyFile, client);
+    const assetInventoryScan = await checkCloudAssetInventory(keyFile, client);
+    const accessTransparencyScan = await checkAccessTransparency(keyFile, client);
+    const accessApprovalScan = await checkAccessApproval(keyFile, client);
+    const loadBalancerLoggingScan = await checkLoadBalancerLogging(keyFile, client);
 
     // Send final JSON
     return res.json({

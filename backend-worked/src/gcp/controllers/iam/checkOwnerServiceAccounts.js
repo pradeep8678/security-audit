@@ -24,7 +24,7 @@ module.exports = async function checkOwnerServiceAccounts(client, projectId) {
               role: binding.role,
 
               // Same exact style you used in other checks
-              exposureRisk: "High",
+              exposureRisk: "🔴 High",
 
               recommendation:
                 "Remove 'roles/owner' from this service account and assign only the minimum required permissions.",
@@ -49,7 +49,7 @@ module.exports = async function checkOwnerServiceAccounts(client, projectId) {
     // status: hasOwners ? "FAIL" : "PASS",
 
     // Same structure you used in KMS + IAM checks
-    exposureRisk: hasOwners ? "High" : "Low",
+    exposureRisk: hasOwners ? "🔴 High" : "🟡 Low",
 
     recommendation: hasOwners
       ? "Remove Owner permissions from service accounts to prevent full-project compromise."

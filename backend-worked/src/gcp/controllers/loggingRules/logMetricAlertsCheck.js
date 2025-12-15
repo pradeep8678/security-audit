@@ -4,15 +4,20 @@ const { google } = require("googleapis");
 /**
  * 🚨 Ensure that critical log metrics & alerts exist
  */
-async function checkLogMetricAlerts(keyFile) {
+async function checkLogMetricAlerts(keyFile, passedAuthClient = null) {
   const findings = [];
   try {
-    const auth = new google.auth.GoogleAuth({
-      credentials: keyFile,
-      scopes: ["https://www.googleapis.com/auth/cloud-platform"],
-    });
+    let authClient;
+    if (passedAuthClient) {
+      authClient = passedAuthClient;
+    } else {
+      const auth = new google.auth.GoogleAuth({
+        credentials: keyFile,
+        scopes: ["https://www.googleapis.com/auth/cloud-platform"],
+      });
 
-    const authClient = await auth.getClient();
+      authClient = await auth.getClient();
+    }
     google.options({ auth: authClient });
 
     const projectId = keyFile.project_id;
@@ -40,7 +45,7 @@ async function checkLogMetricAlerts(keyFile) {
         findings.push({
           metric: m.name,
           issue: "Missing log metric",
-          exposureRisk: "High",
+          exposureRisk: "🔴 High",
           recommendation: `Create log metric with filter: ${m.filter}`,
         });
       }

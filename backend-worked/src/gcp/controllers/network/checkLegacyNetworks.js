@@ -5,15 +5,20 @@ const { google } = require("googleapis");
  * @param {Object} keyFile - Parsed GCP service account JSON
  * @returns {Array} - List of legacy network vulnerabilities
  */
-async function checkLegacyNetworks(keyFile) {
+async function checkLegacyNetworks(keyFile, passedAuthClient = null) {
   try {
-    const auth = new google.auth.GoogleAuth({
-      credentials: keyFile,
-      scopes: ["https://www.googleapis.com/auth/cloud-platform"],
-    });
+    let authClient;
+    if (passedAuthClient) {
+      authClient = passedAuthClient;
+    } else {
+      const auth = new google.auth.GoogleAuth({
+        credentials: keyFile,
+        scopes: ["https://www.googleapis.com/auth/cloud-platform"],
+      });
+      authClient = await auth.getClient();
+    }
 
     const compute = google.compute("v1");
-    const authClient = await auth.getClient();
     google.options({ auth: authClient });
 
     const projectId = keyFile.project_id;
@@ -35,7 +40,7 @@ async function checkLegacyNetworks(keyFile) {
           type: "LEGACY",
           ipv4Range: net.IPv4Range,
           access: "legacy-network",
-          exposureRisk: "Medium",
+          exposureRisk: "🟠 Medium",
           recommendation: `Legacy network "${net.name}" exists in project "${projectId}". ` +
             `Legacy networks are flat networks with weaker security boundaries. ` +
             `Create a custom VPC and migrate workloads. Delete this legacy network afterward.`,

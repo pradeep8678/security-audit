@@ -40,7 +40,7 @@ module.exports = async function checkSaKeyRotation90Days(auth, projectId) {
           keyName: key.name,
           lastRotatedDaysAgo: diffDays,
           // status: isFail ? "FAIL" : "PASS",
-          exposureRisk: isFail ? "High" : "Low",
+          exposureRisk: isFail ? "🔴 High" : "🟡 Low",
           recommendation: isFail
             ? "Rotate this user-managed key immediately and enforce an automated 90-day rotation policy."
             : "Key rotation is compliant. No action required.",

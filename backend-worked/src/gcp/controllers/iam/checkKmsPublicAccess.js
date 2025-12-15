@@ -51,7 +51,7 @@ module.exports = async function checkKmsPublicAccess(client, projectId) {
               keyName: key.name,
               location: locationId,
               // status: "FAIL",
-              exposureRisk: "High",
+              exposureRisk: "🔴 High",
               recommendation:
                 "Remove public access (allUsers/allAuthenticatedUsers) from this KMS key immediately.",
             });

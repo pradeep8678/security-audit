@@ -25,7 +25,7 @@ module.exports = function checkDefaultServiceAccount(instances) {
         machineType: vm.machineType,
         status: vm.status,
         serviceAccount: attachedSA,
-        exposureRisk: "HIGH", // individual VM risk
+        exposureRisk: "🔴 HIGH", // individual VM risk
         recommendation:
           "Assign a custom service account with least-privilege IAM permissions instead of using the default one.",
       });
@@ -46,6 +46,6 @@ module.exports = function checkDefaultServiceAccount(instances) {
       riskyInstances.length > 0
         ? "Some VMs are using the default Compute Engine service account, which is not recommended."
         : "No VM is using the default service account. Good IAM practice!",
-    exposureRisk: riskyInstances.length > 0 ? "HIGH" : "LOW", // overall risk
+    exposureRisk: riskyInstances.length > 0 ? "🔴 HIGH" : "🟡 LOW", // overall risk
   };
 };

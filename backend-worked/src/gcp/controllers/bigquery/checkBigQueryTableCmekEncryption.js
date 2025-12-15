@@ -35,7 +35,7 @@ module.exports = async function checkBigQueryTableCmekEncryption(auth, projectId
             projectId,
             datasetId,
             tableId,
-            exposureRisk: "Medium",
+            exposureRisk: "🟠 Medium",
             issue: "Table is NOT encrypted with a customer-managed key (CMEK)",
             recommendation:
               "Enable CMEK encryption on this BigQuery table using a Cloud KMS key.",

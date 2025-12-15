@@ -48,7 +48,7 @@ module.exports = async function checkKmsSeparationOfDuties(client, projectId) {
         projectId,
         // status: "FAIL",
         violatingMembers: Array.from(violatingMembers),
-        exposureRisk: "High",
+        exposureRisk: "🔴 High",
         recommendation:
           "Separate KMS administrative roles from cryptographic key usage roles. No identity should have both admin and encrypter/decrypter permissions.",
       });

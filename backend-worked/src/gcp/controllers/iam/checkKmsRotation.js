@@ -34,7 +34,7 @@ module.exports = async function checkKmsRotation(client, projectId) {
             location: locationId,
             rotationPeriod: "NONE",
             // status: "FAIL",
-            exposureRisk: "High",
+            exposureRisk: "🔴 High",
             recommendation:
               "Enable automatic key rotation (recommended: every 90 days) to reduce exposure risk.",
           });

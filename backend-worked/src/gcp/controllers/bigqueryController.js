@@ -8,18 +8,23 @@ const checkBigQueryDefaultCmek = require("./bigquery/checkBigQueryDefaultCmek");
 
 exports.checkBigQuery = async (req, res) => {
   try {
-    if (!req.file)
+    let keyFile, client, projectId;
+
+    if (req.parsedKey && req.authClient) {
+      keyFile = req.parsedKey;
+      client = req.authClient;
+      projectId = keyFile.project_id;
+    } else if (req.file) {
+      keyFile = JSON.parse(req.file.buffer.toString("utf8"));
+      projectId = keyFile.project_id;
+      const auth = new google.auth.GoogleAuth({
+        credentials: keyFile,
+        scopes: ["https://www.googleapis.com/auth/cloud-platform"],
+      });
+      client = await auth.getClient();
+    } else {
       return res.status(400).json({ error: "Key file is required" });
-
-    const keyFile = JSON.parse(req.file.buffer.toString("utf8"));
-
-    const auth = new google.auth.GoogleAuth({
-      credentials: keyFile,
-      scopes: ["https://www.googleapis.com/auth/cloud-platform"],
-    });
-
-    const client = await auth.getClient();
-    const projectId = keyFile.project_id;
+    }
 
     console.log(`🚀 Running BigQuery Audit for project: ${projectId}`);
 

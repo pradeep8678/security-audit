@@ -13,22 +13,28 @@ const cloudrunController = require("./cloudrunController");
 const lbController = require("./lbController");
 const ownerController = require("./ownerController");
 const gcpController = require("./gcpController"); // VM + additional GCP audits
-const bigqueryController = require("./bigqueryController"); 
-const networkController = require("./networkController"); 
-const loggingController = require("./loggingController"); 
-
-const { logging } = require("googleapis/build/src/apis/logging");
+const bigqueryController = require("./bigqueryController");
+const networkController = require("./networkController");
+const loggingController = require("./loggingController");
+const { google } = require("googleapis");
 
 /**
  * Utility to execute any Express-style controller function and capture its JSON response
  */
-async function invokeController(label, controllerFn, file) {
+async function invokeController(label, controllerFn, file, parsedKey, authClient) {
   return new Promise(async (resolve) => {
     try {
       let responseData = null;
 
       // Fake Express req/res for internal invocation
-      const fakeReq = { file };
+      // Pass pre-parsed key and auth client to avoid re-parsing/re-auth
+      const fakeReq = {
+        file,
+        parsedKey,
+        authClient,
+        project_id: parsedKey.project_id
+      };
+
       const fakeRes = {
         status: (code) => ({
           json: (data) => {
@@ -82,29 +88,38 @@ exports.runFullAudit = async (req, res) => {
       return res.status(400).json({ error: "Service account key file required" });
     }
 
-    console.log("🚀 Starting Full GCP Security Audit...");
+    console.log("🚀 Starting Full GCP Security Audit (Optimized)...");
 
+    // 1. Parse Key File ONCE
     const file = req.file;
+    const parsedKey = JSON.parse(file.buffer.toString("utf8"));
 
-    // Run all audits in parallel
+    // 2. Initialize Google Auth Client ONCE
+    const auth = new google.auth.GoogleAuth({
+      credentials: parsedKey,
+      scopes: ["https://www.googleapis.com/auth/cloud-platform"],
+    });
+    const authClient = await auth.getClient();
+
+    console.log(`🔑 Authenticated for project: ${parsedKey.project_id}`);
+
+    // Run all audits in parallel, passing the auth client
     const results = await Promise.all([
-      invokeController("Buckets", bucketController.auditBuckets, file),
-      invokeController("Firewall Rules", firewallController.scanFirewallRules, file),
-      invokeController("GKE Clusters", gkeController.checkGKEClusters, file),
-      invokeController("SQL Instances", sqlController.checkSQL, file),
-      invokeController("Cloud Run / Functions", cloudrunController.scanCloudRunAndFunctions, file),
-      invokeController("Load Balancers", lbController.checkLoadBalancersAudit, file),
-      invokeController("Owner IAM Roles", ownerController.checkIAM, file),
-      invokeController("VM Scan", gcpController.listVMs, file),
-      invokeController("Big Query Scan", bigqueryController.checkBigQuery, file),
-      invokeController("Network Scan", networkController.checkNETWORK, file),
-      invokeController("Logging Scan", loggingController.checkLogging, file),
-   
+      invokeController("Buckets", bucketController.auditBuckets, file, parsedKey, authClient),
+      invokeController("Firewall Rules", firewallController.scanFirewallRules, file, parsedKey, authClient),
+      invokeController("GKE Clusters", gkeController.checkGKEClusters, file, parsedKey, authClient),
+      invokeController("SQL Instances", sqlController.checkSQL, file, parsedKey, authClient),
+      invokeController("Cloud Run / Functions", cloudrunController.scanCloudRunAndFunctions, file, parsedKey, authClient),
+      invokeController("Load Balancers", lbController.checkLoadBalancersAudit, file, parsedKey, authClient),
+      invokeController("Owner IAM Roles", ownerController.checkIAM, file, parsedKey, authClient),
+      invokeController("VM Scan", gcpController.listVMs, file, parsedKey, authClient),
+      invokeController("Big Query Scan", bigqueryController.checkBigQuery, file, parsedKey, authClient),
+      invokeController("Network Scan", networkController.checkNETWORK, file, parsedKey, authClient),
+      invokeController("Logging Scan", loggingController.checkLogging, file, parsedKey, authClient),
     ]);
 
     // Combine everything into a final report
     return res.status(200).json({
-      // message: "✅ Full GCP Security Audit completed successfully.",
       timestamp: new Date().toISOString(),
       totalChecks: results.length,
       results,
@@ -117,3 +132,4 @@ exports.runFullAudit = async (req, res) => {
     });
   }
 };
+

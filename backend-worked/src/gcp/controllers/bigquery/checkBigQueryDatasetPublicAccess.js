@@ -31,7 +31,7 @@ module.exports = async function checkBigQueryDatasetPublicAccess(auth, projectId
         results.push({
           datasetId,
           projectId,
-          exposureRisk: "High",
+          exposureRisk: "🔴 High",
           issue: "Dataset is publicly accessible",
           recommendation:
             "Remove 'allUsers' or 'allAuthenticatedUsers' from dataset IAM policy.",

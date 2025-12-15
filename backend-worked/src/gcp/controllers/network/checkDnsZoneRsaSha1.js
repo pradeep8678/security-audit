@@ -5,15 +5,20 @@ const { google } = require("googleapis");
  * @param {Object} keyFile - Parsed GCP service account JSON
  * @returns {Array} - DNS zones where the zone algorithm is RSASHA1
  */
-async function checkDnsZoneRsaSha1(keyFile) {
+async function checkDnsZoneRsaSha1(keyFile, passedAuthClient = null) {
   try {
-    const auth = new google.auth.GoogleAuth({
-      credentials: keyFile,
-      scopes: ["https://www.googleapis.com/auth/cloud-platform"],
-    });
+    let authClient;
+    if (passedAuthClient) {
+      authClient = passedAuthClient;
+    } else {
+      const auth = new google.auth.GoogleAuth({
+        credentials: keyFile,
+        scopes: ["https://www.googleapis.com/auth/cloud-platform"],
+      });
+      authClient = await auth.getClient();
+    }
 
     const dns = google.dns("v1");
-    const authClient = await auth.getClient();
     google.options({ auth: authClient });
 
     const projectId = keyFile.project_id;
@@ -39,7 +44,7 @@ async function checkDnsZoneRsaSha1(keyFile) {
           dnsName: zone.dnsName,
           type: "Cloud DNS",
           access: "rsa-sha1-zone",
-          exposureRisk: "High",
+          exposureRisk: "🔴 High",
           recommendation: `DNS zone "${zone.name}" is configured to use RSASHA1 as its DNSSEC ` +
             `signing algorithm. RSASHA1 is deprecated and vulnerable. Update the zone ` +
             `to a stronger algorithm such as RSASHA256 or ECDSAP256SHA256.`,

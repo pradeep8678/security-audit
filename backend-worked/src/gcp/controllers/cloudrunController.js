@@ -5,14 +5,22 @@ const { google } = require("googleapis");
  * 🔍 Pure reusable audit function (no Express res)
  * Used by fullAuditController
  */
-async function analyzeCloudRunAndFunctions(keyFile) {
+async function analyzeCloudRunAndFunctions(keyFile, passedAuthClient = null) {
   try {
-    const auth = new google.auth.GoogleAuth({
-      credentials: keyFile,
-      scopes: ["https://www.googleapis.com/auth/cloud-platform"],
-    });
+    let auth;
+    if (passedAuthClient) {
+      // If passedAuthClient is a JWT/Compute client, we can use it directly.
+      // Google APIs often expect 'auth' option to be the client or an Auth instance.
+      auth = passedAuthClient;
+    } else {
+      auth = new google.auth.GoogleAuth({
+        credentials: keyFile,
+        scopes: ["https://www.googleapis.com/auth/cloud-platform"],
+      });
+    }
 
     const projectId = keyFile.project_id;
+    // When passing auth client directly to service constructor
     const cloudFunctions = google.cloudfunctions({ version: "v1", auth });
     const cloudRun = google.run({ version: "v1", auth });
     const results = [];
@@ -120,8 +128,8 @@ async function analyzeCloudRunAndFunctions(keyFile) {
           authLevel = hasAllUsers
             ? "Unauthenticated"
             : hasAllAuthUsers
-            ? "All Authenticated Users"
-            : "Restricted";
+              ? "All Authenticated Users"
+              : "Restricted";
         } catch (e) {
           console.warn(`Policy fetch failed for ${name}:`, e.message);
         }
@@ -174,12 +182,18 @@ async function analyzeCloudRunAndFunctions(keyFile) {
  */
 exports.scanCloudRunAndFunctions = async (req, res) => {
   try {
-    if (!req.file) return res.status(400).json({ error: "Key file is required" });
+    let keyFile, authClient;
 
-    const keyFileBuffer = req.file.buffer.toString("utf8");
-    const keyFile = JSON.parse(keyFileBuffer);
+    if (req.parsedKey && req.authClient) {
+      keyFile = req.parsedKey;
+      authClient = req.authClient;
+    } else if (req.file) {
+      keyFile = JSON.parse(req.file.buffer.toString("utf8"));
+    } else {
+      return res.status(400).json({ error: "Key file is required" });
+    }
 
-    const result = await analyzeCloudRunAndFunctions(keyFile);
+    const result = await analyzeCloudRunAndFunctions(keyFile, authClient);
     res.status(result.success ? 200 : 500).json(result);
   } catch (error) {
     console.error("Scan Cloud Run & Function failed:", error);

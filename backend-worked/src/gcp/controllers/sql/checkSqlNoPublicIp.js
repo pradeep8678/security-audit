@@ -16,7 +16,7 @@ module.exports = async function checkSqlNoPublicIp(auth, projectId) {
         results.push({
           instance: inst.name,
           region: inst.region,
-          exposureRisk: "High",
+          exposureRisk: "🔴 High",
           issue: "Cloud SQL instance has Public IP enabled.",
           recommendation:
             "Disable public IP. Use Private IP (VPC networks) for secure access.",

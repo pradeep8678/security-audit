@@ -17,7 +17,7 @@ module.exports = async function checkBigQueryDefaultCmek(auth, projectId) {
     if (!kmsKey) {
       results.push({
         projectId,
-        exposureRisk: "Medium",
+        exposureRisk: "🟠 Medium",
         issue: "Default Customer-Managed Key (CMEK) is NOT configured for BigQuery.",
         recommendation:
           "Configure default CMEK in BigQuery project settings to encrypt all new datasets/tables.",

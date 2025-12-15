@@ -1,15 +1,20 @@
 // loggingRules/logSinkCheck.js
 const { google } = require("googleapis");
 
-async function checkLogSinks(keyFile) {
+async function checkLogSinks(keyFile, passedAuthClient = null) {
   const findings = [];
   try {
-    const auth = new google.auth.GoogleAuth({
-      credentials: keyFile,
-      scopes: ["https://www.googleapis.com/auth/cloud-platform"],
-    });
+    let authClient;
+    if (passedAuthClient) {
+      authClient = passedAuthClient;
+    } else {
+      const auth = new google.auth.GoogleAuth({
+        credentials: keyFile,
+        scopes: ["https://www.googleapis.com/auth/cloud-platform"],
+      });
 
-    const authClient = await auth.getClient();
+      authClient = await auth.getClient();
+    }
     google.options({ auth: authClient });
 
     const projectId = keyFile.project_id;
@@ -24,7 +29,7 @@ async function checkLogSinks(keyFile) {
     if (!sinks.find((s) => s.filter?.includes("logName:\"logs/\""))) {
       findings.push({
         access: "log-sink-missing",
-        exposureRisk: "Medium",
+        exposureRisk: "🟠 Medium",
         recommendation: "Create a sink to export ALL logs.",
       });
     }

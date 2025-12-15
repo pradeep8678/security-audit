@@ -6,16 +6,21 @@ const { google } = require("googleapis");
  * @param {Object} keyFile - Parsed GCP service account JSON
  * @returns {Array} - Firewall rules exposing RDP to 0.0.0.0/0
  */
-async function checkRdpAccess(keyFile) {
+async function checkRdpAccess(keyFile, passedAuthClient = null) {
   const compute = google.compute("v1");
   const findings = [];
 
   try {
-    const auth = new google.auth.GoogleAuth({
-      credentials: keyFile,
-      scopes: ["https://www.googleapis.com/auth/cloud-platform"],
-    });
-    const authClient = await auth.getClient();
+    let authClient;
+    if (passedAuthClient) {
+      authClient = passedAuthClient;
+    } else {
+      const auth = new google.auth.GoogleAuth({
+        credentials: keyFile,
+        scopes: ["https://www.googleapis.com/auth/cloud-platform"],
+      });
+      authClient = await auth.getClient();
+    }
     google.options({ auth: authClient });
 
     const projectId = keyFile.project_id;
@@ -33,8 +38,9 @@ async function checkRdpAccess(keyFile) {
       );
 
       const isOpenToInternet = rule.sourceRanges?.includes("0.0.0.0/0");
+      const isDefault = rule.name.startsWith("default-");
 
-      if (allowsRDP && isOpenToInternet) {
+      if (allowsRDP && isOpenToInternet && !isDefault) {
         findings.push({
           firewallRule: rule.name,
           network: rule.network,
@@ -42,7 +48,7 @@ async function checkRdpAccess(keyFile) {
           direction: rule.direction,
           disabled: rule.disabled,
           access: "rdp-open-to-internet",
-          exposureRisk: "High",
+          exposureRisk: "🔴 High",
           recommendation: "Restrict RDP (TCP/3389) access to trusted IP ranges instead of 0.0.0.0/0. Prefer using Identity-Aware Proxy (IAP) for secure RDP access.",
         });
       }

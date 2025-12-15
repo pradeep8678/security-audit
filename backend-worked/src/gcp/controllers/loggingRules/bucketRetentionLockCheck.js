@@ -1,13 +1,20 @@
 // loggingRules/bucketRetentionLockCheck.js
 const { google } = require("googleapis");
 
-async function checkBucketRetentionLock(keyFile) {
+async function checkBucketRetentionLock(keyFile, passedAuthClient = null) {
   const findings = [];
   try {
-    const auth = new google.auth.GoogleAuth({
-      credentials: keyFile,
-      scopes: ["https://www.googleapis.com/auth/cloud-platform"],
-    });
+    let authClient;
+    if (passedAuthClient) {
+      authClient = passedAuthClient;
+    } else {
+      const auth = new google.auth.GoogleAuth({
+        credentials: keyFile,
+        scopes: ["https://www.googleapis.com/auth/cloud-platform"],
+      });
+      authClient = await auth.getClient();
+    }
+    google.options({ auth: authClient });
     const storage = google.storage("v1");
 
     const projectId = keyFile.project_id;
@@ -23,7 +30,7 @@ async function checkBucketRetentionLock(keyFile) {
         findings.push({
           bucket: b.name,
           issue: "Retention Lock missing",
-          exposureRisk: "High",
+          exposureRisk: "🔴 High",
           recommendation:
             "Enable 'Bucket Lock' (retentionPolicy.isLocked) for log buckets.",
         });

@@ -4,14 +4,19 @@ const { google } = require("googleapis");
 /**
  * 📝 Ensure Cloud Audit Logging is enabled for Admin Read, Data Read, Data Write
  */
-async function checkCloudAuditLogging(keyFile) {
+async function checkCloudAuditLogging(keyFile, passedAuthClient = null) {
   const findings = [];
   try {
-    const auth = new google.auth.GoogleAuth({
-      credentials: keyFile,
-      scopes: ["https://www.googleapis.com/auth/cloud-platform"],
-    });
-    const authClient = await auth.getClient();
+    let authClient;
+    if (passedAuthClient) {
+      authClient = passedAuthClient;
+    } else {
+      const auth = new google.auth.GoogleAuth({
+        credentials: keyFile,
+        scopes: ["https://www.googleapis.com/auth/cloud-platform"],
+      });
+      authClient = await auth.getClient();
+    }
     google.options({ auth: authClient });
 
     const projectId = keyFile.project_id;
@@ -26,7 +31,7 @@ async function checkCloudAuditLogging(keyFile) {
     if (sinks.length === 0) {
       findings.push({
         access: "cloud-audit-logging",
-        exposureRisk: "High",
+        exposureRisk: "🔴 High",
         issue: "No logging sinks found",
         recommendation:
           "Create logging sinks to export Admin Activity, Data Access logs.",

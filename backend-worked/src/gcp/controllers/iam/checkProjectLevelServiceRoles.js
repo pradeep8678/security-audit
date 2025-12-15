@@ -29,7 +29,7 @@ module.exports = async function checkProjectLevelServiceRoles(auth, projectId) {
           role: binding.role,
           members: binding.members || [],
           status: "FAIL",
-          exposureRisk: "High",
+          exposureRisk: "🔴 High",
           recommendation:
             "Avoid assigning Service Account User or Token Creator roles at project level. Grant permissions only on specific service accounts following least privilege.",
         });
@@ -41,7 +41,7 @@ module.exports = async function checkProjectLevelServiceRoles(auth, projectId) {
       report.push({
         projectId,
         // status: "PASS",
-        exposureRisk: "Low",
+        exposureRisk: "🟡 Low",
         recommendation:
           "No risky service roles assigned at project level. No action required.",
       });

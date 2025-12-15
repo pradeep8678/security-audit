@@ -12,17 +12,23 @@ const checkOwnerServiceAccounts = require("./iam/checkOwnerServiceAccounts");
 
 exports.checkIAM = async (req, res) => {
   try {
-    if (!req.file) return res.status(400).json({ error: "Key file is required" });
+    let keyFile, client, projectId;
 
-    const keyFile = JSON.parse(req.file.buffer.toString("utf8"));
-
-    const auth = new google.auth.GoogleAuth({
-      credentials: keyFile,
-      scopes: ["https://www.googleapis.com/auth/cloud-platform"],
-    });
-
-    const client = await auth.getClient();
-    const projectId = keyFile.project_id;
+    if (req.parsedKey && req.authClient) {
+      keyFile = req.parsedKey;
+      client = req.authClient;
+      projectId = keyFile.project_id;
+    } else if (req.file) {
+      keyFile = JSON.parse(req.file.buffer.toString("utf8"));
+      projectId = keyFile.project_id;
+      const auth = new google.auth.GoogleAuth({
+        credentials: keyFile,
+        scopes: ["https://www.googleapis.com/auth/cloud-platform"],
+      });
+      client = await auth.getClient();
+    } else {
+      return res.status(400).json({ error: "Key file is required" });
+    }
 
     console.log(`🚀 Running IAM Audit for project: ${projectId}`);
 
