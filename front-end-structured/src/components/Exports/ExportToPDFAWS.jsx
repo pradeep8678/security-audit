@@ -127,61 +127,45 @@ export default function ExportToPDF({ auditResult, onClick }) {
   /* ==========================
        FIXED Extractor (AWS + GCP)
   ========================== */
+  /* ======================================================
+       FIXED Extractor (AWS + GCP)
+  ====================================================== */
   const extractItems = (resource, block) => {
     if (!block) return [];
 
     switch (resource) {
       /* -------- AWS RESOURCES -------- */
-      case "EC2 Instances":
-        return block.instances || [];
-
-      case "S3 Buckets":
-        return block.buckets || [];
-
-      case "Load Balancers":
-        return block.loadBalancers || [];
-
+      case "EC2 Instances": return block.instances || [];
+      case "S3 Buckets": return block.buckets || [];
+      case "Load Balancers": return block.loadBalancers || [];
       case "IAM Users & Roles":
         return [
           ...(block.adminUsers || []),
           ...(block.adminRoles || []),
         ];
-
-      case "Security Groups":
-        return block.publicRules || [];
-
-      case "EKS Clusters":
-        return block.clusters || [];
-
-      case "App Runner Services":
-        return block.findings || [];
-
-      case "RDS Databases":
-        return block.instances || [];
+      case "Security Groups": return block.publicRules || [];
+      case "EKS Clusters": return block.clusters || [];
+      case "App Runner Services": return block.findings || [];
+      case "RDS Databases": return block.instances || [];
 
       /* -------- GCP RESOURCES -------- */
-      case "Buckets":
-        return block.buckets || [];
-
-      case "Firewall Rules":
-        return block.publicRules || [];
-
-      case "GKE Clusters":
-        return block.clusters || [];
-
-      case "SQL Instances":
-        return block.instances || [];
-
-      case "Cloud Run / Functions":
-        return block.functionsAndRuns || [];
-
-      case "Owner IAM Roles":
-        return block.ownerServiceAccounts || [];
-
-      case "VM Instances":
-        return block.instances || [];
+      case "Buckets": return block.buckets || [];
+      case "Firewall Rules": return block.publicRules || [];
+      case "GKE Clusters": return block.clusters || [];
+      case "SQL Instances": return block.instances || [];
+      case "Cloud Run / Functions": return block.functionsAndRuns || [];
+      case "Owner IAM Roles": return block.ownerServiceAccounts || [];
+      case "VM Instances": return block.instances || [];
 
       default:
+        // Dynamic fallback
+        if (Array.isArray(block)) return block;
+        if (typeof block === 'object' && block !== null) {
+          const keys = ['findings', 'results', 'instances', 'buckets', 'clusters', 'publicRules'];
+          for (const key of keys) {
+            if (Array.isArray(block[key]) && block[key].length > 0) return block[key];
+          }
+        }
         return [];
     }
   };
@@ -190,12 +174,26 @@ export default function ExportToPDF({ auditResult, onClick }) {
     <button
       onClick={generatePDF}
       style={{
-        padding: "10px 15px",
-        width: "100%",
-        cursor: "pointer",
-        background: "transparent",
-        fontWeight: "bold",
+        padding: "12px 16px",
+        color: "#e2e8f0",
         border: "none",
+        width: "100%",
+        borderRadius: "8px",
+        cursor: "pointer",
+        fontWeight: "600",
+        textAlign: "left",
+        background: "transparent",
+        transition: "all 0.2s ease",
+      }}
+      onMouseEnter={(e) => {
+        e.target.style.background = "rgba(59, 130, 246, 0.2)";
+        e.target.style.color = "#60a5fa";
+        e.target.style.paddingLeft = "20px";
+      }}
+      onMouseLeave={(e) => {
+        e.target.style.background = "transparent";
+        e.target.style.color = "#e2e8f0";
+        e.target.style.paddingLeft = "16px";
       }}
     >
       Download PDF

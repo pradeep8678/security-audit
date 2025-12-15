@@ -74,7 +74,14 @@ export default function FullAudit({ file }) {
             disabled={loading}
             className={loading ? styles.btnDisabled : styles.btnPrimary}
           >
-            {loading ? "Running..." : "Run GCP Audit"}
+            {loading ? (
+              <div className={styles.loadingFlex}>
+                <span className={styles.loader}></span>
+                <span>Running Scan...</span>
+              </div>
+            ) : (
+              "Run GCP Audit"
+            )}
           </button>
 
           {allDataLoaded && (
