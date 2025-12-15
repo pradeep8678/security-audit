@@ -4,22 +4,22 @@ import styles from "../../styles/FullAudit.module.css";
 import { generateColumnDefs } from "../../utils/auditUtils";
 
 const AuditSection = ({ title, type, data, subSections }) => {
-    // If type is 'multi', we expect subSections to be an array of objects { title, data }
+    // ------------------------------------------
+    // MULTI-SECTION (e.g. Broken Down by Rule)
+    // ------------------------------------------
     if (type === "multi") {
-        // If no subsections or all are empty, maybe show a "safe" message?
-        // But usually the parent filters this out. 
-        // If we want to show "No findings" inside the card, we can check here.
+        // Filter out empty subsections to avoid rendering empty cards
+        const populatedSubSections = subSections?.filter(sub => sub.data && sub.data.length > 0);
 
-        // Check if we have any data to show
-        const hasData = subSections && subSections.some(sub => sub.data && sub.data.length > 0);
-
-        if (!hasData) {
-            if (title === "VM Security Findings") {
+        // If nothing to show at all
+        if (!populatedSubSections || populatedSubSections.length === 0) {
+            // Optional: For critical sections like VM Security, show a "Safe" card
+            if (title === "VM Security Findings" || title === "Firewall Rules") {
                 return (
                     <div className={styles.card}>
                         <h3 className={styles.cardTitle}>{title}</h3>
                         <p className={styles.infoText}>
-                            ✅ No risky findings detected. All checks passed.
+                            ✅ No high-risk findings detected. Systems appear secure.
                         </p>
                     </div>
                 );
@@ -30,8 +30,7 @@ const AuditSection = ({ title, type, data, subSections }) => {
         return (
             <div className={styles.card}>
                 <h3 className={styles.cardTitle}>{title}</h3>
-                {subSections.map((sub, idx) => {
-                    if (!sub.data || sub.data.length === 0) return null;
+                {populatedSubSections.map((sub, idx) => {
                     const colDefs = generateColumnDefs(sub.data);
                     return (
                         <div key={idx} className={styles.subCard}>
@@ -44,7 +43,9 @@ const AuditSection = ({ title, type, data, subSections }) => {
         );
     }
 
-    // Single table type
+    // ------------------------------------------
+    // SINGLE TABLE SECTION
+    // ------------------------------------------
     if (!data || data.length === 0) return null;
 
     const colDefs = generateColumnDefs(data);
@@ -52,10 +53,6 @@ const AuditSection = ({ title, type, data, subSections }) => {
     return (
         <div className={styles.card}>
             <h3 className={styles.cardTitle}>{title}</h3>
-            {/* If it's Owner IAM Roles, it has a specific sub-structure in the original, 
-          but we can genericize it or handle it here if we want to keep the "High-Risk..." subtitle.
-          For now, we'll just render the table. If we need a subtitle, we can pass it in `data`. 
-      */}
             <AgTable rowData={data} columnDefs={colDefs} height={400} />
         </div>
     );

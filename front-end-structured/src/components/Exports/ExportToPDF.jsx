@@ -136,36 +136,51 @@ export default function ExportToPDF({ auditResult, onClick }) {
   /* ======================================================
        EXTRACT ITEMS FOR EACH RESOURCE TYPE
   ====================================================== */
-  const extractItems = (resource, block) => {
-    if (!block) return [];
+  /* ======================================================
+       EXTRACT ITEMS FOR EACH RESOURCE TYPE (Dynamic)
+  ====================================================== */
+  const extractItems = (resourceName, resourceData) => {
+    if (!resourceData) return [];
 
-    switch (resource) {
-      case "Buckets":
-        return block.buckets || [];
+    // Duplicate logic from ExportToExcel for consistency
+    const findArrays = (obj) => {
+      if (Array.isArray(obj)) return obj;
+      if (typeof obj !== 'object' || obj === null) return [];
 
-      case "Firewall Rules":
-        return block.publicRules || [];
+      let allItems = [];
+      const potentialKeys = ['findings', 'results', 'instances', 'buckets', 'clusters', 'publicRules', 'loadBalancers'];
 
-      case "GKE Clusters":
-        return block.clusters || [];
+      for (const key of potentialKeys) {
+        if (Array.isArray(obj[key]) && obj[key].length > 0) return obj[key];
+      }
 
-      case "SQL Instances":
-        return block.instances || [];
+      // Special Handling for Multi-Check Sections
+      if (["VM Scan", "Big Query Scan", "Network Scan", "Logging Scan", "SQL Instances"].includes(resourceName)) {
+        Object.values(obj).forEach(val => {
+          if (Array.isArray(val)) {
+            allItems = [...allItems, ...val];
+          } else if (typeof val === 'object' && val !== null) {
+            Object.values(val).forEach(innerVal => {
+              if (Array.isArray(innerVal)) {
+                allItems = [...allItems, ...innerVal];
+              }
+            });
+          }
+        });
+        return allItems;
+      }
 
-      case "Cloud Run / Functions":
-        return block.functionsAndRuns || [];
+      return allItems;
+    };
 
-      case "Load Balancers":
-        return block.loadBalancers || [];
-
-      case "Owner IAM Roles":
-        return block.ownerServiceAccounts || [];
-
-      case "VM Instances":
-        return block.instances || [];
-
-      default:
-        return [];
+    switch (resourceName) {
+      case "Buckets": return resourceData.buckets || resourceData.uniformAccessFindings || [];
+      case "Firewall Rules": return resourceData.publicRules || [];
+      case "GKE Clusters": return resourceData.clusters || resourceData.findings || [];
+      case "Owner IAM Roles": return resourceData.ownerServiceAccounts || [];
+      case "Cloud Run / Functions": return resourceData.functionsAndRuns || [];
+      case "Load Balancers": return resourceData.loadBalancers || [];
+      default: return findArrays(resourceData);
     }
   };
 
@@ -173,12 +188,26 @@ export default function ExportToPDF({ auditResult, onClick }) {
     <button
       onClick={generatePDF}
       style={{
-        padding: "10px 15px",
-        width: "100%",
-        cursor: "pointer",
-        background: "transparent",
-        fontWeight: "bold",
+        padding: "12px 16px",
+        color: "#e2e8f0",
         border: "none",
+        width: "100%",
+        borderRadius: "8px",
+        cursor: "pointer",
+        fontWeight: "600",
+        textAlign: "left",
+        background: "transparent",
+        transition: "all 0.2s ease",
+      }}
+      onMouseEnter={(e) => {
+        e.target.style.background = "rgba(59, 130, 246, 0.2)";
+        e.target.style.color = "#60a5fa";
+        e.target.style.paddingLeft = "20px";
+      }}
+      onMouseLeave={(e) => {
+        e.target.style.background = "transparent";
+        e.target.style.color = "#e2e8f0";
+        e.target.style.paddingLeft = "16px";
       }}
     >
       Download PDF

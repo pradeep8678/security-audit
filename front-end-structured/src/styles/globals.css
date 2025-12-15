@@ -1,50 +1,170 @@
-/* Global reset */
+/* ------------------------------------------------------------- */
+/*  CYBER / TECH PREMIUM DESIGN SYSTEM                           */
+/* ------------------------------------------------------------- */
+
+:root {
+  /* --- COLORS: Primary --- */
+  --primary-base: #3b82f6;
+  /* Vibrant Blue */
+  --primary-glow: #60a5fa;
+  /* Lighter Blue for Glows */
+  --primary-dark: #1d4ed8;
+  /* Deep Blue */
+
+  /* --- COLORS: Accents --- */
+  --accent-cyan: #06b6d4;
+  /* Cyan */
+  --accent-purple: #8b5cf6;
+  /* Violet */
+  --accent-success: #10b981;
+  /* Emerald Green */
+  --accent-warning: #f59e0b;
+  /* Amber */
+  --accent-danger: #ef4444;
+  /* Red */
+
+  /* --- COLORS: Backgrounds (Dark Theme) --- */
+  --bg-app: #0f172a;
+  /* Deepest Blue/Gray (Main Body) */
+  --bg-card: #1e293b;
+  /* Card Background */
+  --bg-card-hover: #334155;
+  /* Card Hover */
+  --bg-glass: rgba(30, 41, 59, 0.7);
+  /* Glassmorphism Base */
+
+  /* --- COLORS: Text --- */
+  --text-main: #f8fafc;
+  /* Almost White */
+  --text-muted: #94a3b8;
+  /* Light Gray */
+  --text-dark: #0f172a;
+  /* For light backgrounds if any */
+
+  /* --- SHADOWS & GLOWS --- */
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  --glow-primary: 0 0 15px rgba(59, 130, 246, 0.5);
+  --glow-cyan: 0 0 15px rgba(6, 182, 212, 0.5);
+
+  /* --- BORDERS --- */
+  --border-light: rgba(255, 255, 255, 0.1);
+  --border-focus: rgba(59, 130, 246, 0.5);
+
+  /* --- SPACING & RADIUS --- */
+  --radius-sm: 6px;
+  --radius-md: 12px;
+  --radius-lg: 20px;
+  --radius-full: 9999px;
+
+  --font-sans: 'Inter', ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+}
+
+/* Global Reset & Base Styles */
 * {
   margin: 0;
   padding: 0;
   box-sizing: border-box;
 }
 
-/* Background */
 body {
-  /* background: radial-gradient(circle at top, #eef3ff 0%, #f7f9ff 40%, #ffffff 100%); */
-  background: black;
-  font-family: 'Inter', sans-serif;
+  background-color: black;
+  /* Reverted to black as per user request */
+  /* background-image removed to let ColorBends shine */
+  color: var(--text-main);
+  font-family: var(--font-sans);
   overflow-x: hidden;
+  min-height: 100vh;
 }
 
-/* Layout wrapper */
+/* Scrollbar Styling */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--bg-app);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--bg-card-hover);
+  border-radius: var(--radius-full);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--primary-base);
+}
+
+/* App Wrapper */
 .app-layout {
   display: flex;
   flex-direction: column;
+  min-height: 100vh;
 }
 
-/* Push content down below navbar */
 .main-content {
   margin-top: 80px;
+  /* Space for fixed Navbar */
   padding: 20px;
-  height: 100%;
+  flex: 1;
+  max-width: 1600px;
+  margin-left: auto;
+  margin-right: auto;
+  width: 100%;
 }
 
+@media (max-width: 768px) {
+  .main-content {
+    margin-top: 130px;
+    /* Adjust for taller mobile navbar */
+  }
+}
 
-.ag-theme-quartz .ag-header {
-  background: #f2f6ff !important;
+/* ------------------------------ */
+/* AG-GRID DARK THEME OVERRIDES   */
+/* ------------------------------ */
+
+/* We assume using 'ag-theme-quartz-dark' or overriding 'ag-theme-quartz' to look dark */
+.ag-theme-quartz {
+  font-family: var(--font-sans) !important;
+  --ag-background-color: var(--bg-card) !important;
+  --ag-foreground-color: var(--text-main) !important;
+  --ag-header-background-color: #1a2236 !important;
+  /* Slightly darker than card */
+  --ag-row-hover-color: #2a3449 !important;
+  --ag-odd-row-background-color: #1e293b !important;
+  /* Same as card base */
+  --ag-border-color: var(--border-light) !important;
+  --ag-header-column-separator-display: block;
+  --ag-header-column-separator-color: var(--border-light) !important;
+  --ag-font-size: 14px;
 }
 
 .ag-theme-quartz .ag-header-cell-label {
-  font-weight: 700 !important;
-  color: #1a73e8 !important; /* Google blue */
-  font-size: 14px !important;
-}
-
-.ag-theme-quartz .ag-header-cell {
-  border-right: 1px solid #d6e2ff !important;
+  font-weight: 600 !important;
+  color: var(--primary-glow) !important;
 }
 
 .ag-theme-quartz .ag-root-wrapper {
-  border-radius: 10px !important;
-  border: 1px solid #e0e7ff !important;
-  overflow: hidden;
+  border: 1px solid var(--border-light) !important;
+  border-radius: var(--radius-md) !important;
+  box-shadow: var(--shadow-md);
 }
 
+/* Custom Status Chips in Grid (if used) */
+.status-chip-high {
+  color: var(--accent-danger);
+  font-weight: bold;
+}
 
+.status-chip-medium {
+  color: var(--accent-warning);
+  font-weight: bold;
+}
+
+.status-chip-low {
+  color: var(--accent-success);
+  font-weight: bold;
+}

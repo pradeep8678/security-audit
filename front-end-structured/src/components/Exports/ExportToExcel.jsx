@@ -28,31 +28,38 @@ export default function ExportToExcel({ auditResult, onClick }) {
     XLSX.utils.book_append_sheet(wb, summarySheet, "Summary");
 
     // -----------------------------------------
-    // ONE SHEET PER RESOURCE
+    // one SHEET PER RESOURCE
     // -----------------------------------------
     Object.keys(auditResult).forEach((resource) => {
-      const cleanName = resource.replace(/[\\\/*?:\[\]]/g, " "); // Excel-safe
+      const cleanName = resource.replace(/[\\\/*?:\[\]]/g, " ").substring(0, 31); // Excel sheet limit
 
-      const items = extractItems(resource);
+      const items = extractItems(resource, auditResult[resource]);
 
       if (!Array.isArray(items) || items.length === 0) {
-        const emptySheet = XLSX.utils.aoa_to_sheet([["No data available"]]);
+        // Skipping empty sheets or creating a "No Data" sheet? 
+        // User asked for "every data", so maybe skip empty ones to be clean, 
+        // or show "No Data" if it was part of the audit.
+        // Let's print a placeholder if it's a known resource type but has no findings.
+        const emptySheet = XLSX.utils.aoa_to_sheet([["No high-risk findings or data available"]]);
         styleSheet(emptySheet);
         XLSX.utils.book_append_sheet(wb, emptySheet, cleanName);
         return;
       }
 
-      const headers = Object.keys(items[0]);
-      const sheetData = [headers];
-
-      items.forEach((item) => {
-        const row = headers.map((h) => item[h] ?? "");
-        sheetData.push(row);
+      // Flatten items for Excel if they are nested
+      const flatItems = items.map(item => {
+        const flat = {};
+        Object.entries(item).forEach(([k, v]) => {
+          if (Array.isArray(v)) flat[k] = v.join(", ");
+          else if (typeof v === "object" && v !== null) flat[k] = JSON.stringify(v);
+          else flat[k] = v;
+        });
+        return flat;
       });
 
-      const sheet = XLSX.utils.aoa_to_sheet(sheetData);
+      const sheet = XLSX.utils.json_to_sheet(flatItems);
       styleSheet(sheet);
-      autoFit(sheet, sheetData);
+      autoFit(sheet, flatItems);
       XLSX.utils.book_append_sheet(wb, sheet, cleanName);
     });
 
@@ -69,30 +76,70 @@ export default function ExportToExcel({ auditResult, onClick }) {
   };
 
   // ---------------------------------------------------------
-  // 🧠 Resource Extractor
+  // 🧠 Resource Extractor - UPDATED for ALL Resources
   // ---------------------------------------------------------
-  const extractItems = (resource) => {
-    if (!auditResult[resource]) return [];
+  const extractItems = (resourceName, resourceData) => {
+    if (!resourceData) return [];
 
-    switch (resource) {
-      case "Buckets":
-        return auditResult[resource].buckets || [];
-      case "Firewall Rules":
-        return auditResult[resource].publicRules || [];
-      case "GKE Clusters":
-        return auditResult[resource].clusters || [];
-      case "SQL Instances":
-        return auditResult[resource].instances || [];
-      case "Cloud Run / Functions":
-        return auditResult[resource].functionsAndRuns || [];
-      case "Load Balancers":
-        return auditResult[resource].loadBalancers || [];
-      case "Owner IAM Roles":
-        return auditResult[resource].ownerServiceAccounts || [];
-      case "VM Instances":
-        return auditResult[resource].instances || [];
+    // Helper to find arrays in objects
+    const findArrays = (obj) => {
+      // If the object itself is an array, return it
+      if (Array.isArray(obj)) return obj;
+
+      // If not an object (e.g. null, string), return []
+      if (typeof obj !== 'object' || obj === null) return [];
+
+      let allItems = [];
+
+      // Check well-known keys first
+      const potentialKeys = ['findings', 'results', 'instances', 'buckets', 'clusters', 'publicRules', 'loadBalancers'];
+      for (const key of potentialKeys) {
+        if (Array.isArray(obj[key]) && obj[key].length > 0) {
+          // Return the first valid primary array we find to avoid mixing widely different data types in one sheet
+          // OR concatenate them if they are uniform? 
+          // Usually for Excel we want one list. 
+          return obj[key];
+        }
+      }
+
+      // If no well-known keys, try to find ANY array property
+      // Or if it's big nested object (like VM Scan which shares key 'vmScan' but is an object of checks)
+      // We might want to FLATTEN multiple sub-checks into one list.
+
+      // Special Handling for "VM Scan", "Big Query Scan", "Network Scan", "Logging Scan"
+      // which return objects of checks: { check1: [...], check2: [...] }
+      if (["VM Scan", "Big Query Scan", "Network Scan", "Logging Scan", "SQL Instances"].includes(resourceName)) {
+        // Iterate over all keys (check names)
+        Object.values(obj).forEach(val => {
+          if (Array.isArray(val)) {
+            allItems = [...allItems, ...val];
+          } else if (typeof val === 'object' && val !== null) {
+            // Try to dig deeper one level (e.g. cloudSqlScan -> requireSslScan)
+            Object.values(val).forEach(innerVal => {
+              if (Array.isArray(innerVal)) {
+                allItems = [...allItems, ...innerVal];
+              }
+            });
+          }
+        });
+        return allItems;
+      }
+
+      return allItems;
+    };
+
+    // Specific known mappings (Legacy + Safe Fallbacks)
+    switch (resourceName) {
+      case "Buckets": return resourceData.buckets || resourceData.uniformAccessFindings || [];
+      case "Firewall Rules": return resourceData.publicRules || [];
+      case "GKE Clusters": return resourceData.clusters || resourceData.findings || [];
+      case "Owner IAM Roles": return resourceData.ownerServiceAccounts || [];
+      case "Cloud Run / Functions": return resourceData.functionsAndRuns || [];
+      case "Load Balancers": return resourceData.loadBalancers || [];
+
       default:
-        return [];
+        // Generic fallback for "VM Scan", "Logging Scan", etc.
+        return findArrays(resourceData);
     }
   };
 
@@ -153,23 +200,26 @@ export default function ExportToExcel({ auditResult, onClick }) {
     <button
       onClick={handleExport}
       style={{
-        padding: "10px 15px",
-        color: "black",
+        padding: "12px 16px",
+        color: "#e2e8f0", // Text muted/white
         border: "none",
         width: "100%",
-        borderRadius: "0px",
+        borderRadius: "8px",
         cursor: "pointer",
-        fontWeight: "bold",
+        fontWeight: "600",
+        textAlign: "left",
         background: "transparent",
-        transition: "0.25s ease",
+        transition: "all 0.2s ease",
       }}
       onMouseEnter={(e) => {
-        e.target.style.background = "#e9f3ff";
-        e.target.style.color = "#0d6efd";
+        e.target.style.background = "rgba(59, 130, 246, 0.2)"; // Primary glow
+        e.target.style.color = "#60a5fa"; // Primary lighter
+        e.target.style.paddingLeft = "20px"; // Slide effect
       }}
       onMouseLeave={(e) => {
         e.target.style.background = "transparent";
-        e.target.style.color = "black";
+        e.target.style.color = "#e2e8f0";
+        e.target.style.paddingLeft = "16px";
       }}
     >
       Download Excel
