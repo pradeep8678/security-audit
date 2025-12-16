@@ -8,7 +8,7 @@ export default function ResultsTable({ results }) {
   const isVM = sample.hasOwnProperty("zone");
 
   return (
-    <div style={{ overflowX: "auto", marginTop: "20px" }}>
+    <div style={{ overfLowX: "auto", marginTop: "20px" }}>
       <table
         border="1"
         cellPadding="8"

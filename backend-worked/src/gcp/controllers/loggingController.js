@@ -32,7 +32,7 @@ exports.checkLogging = async (req, res) => {
       return res.status(400).json({ error: "Key file is required" });
     }
 
-    console.log(`🚀 Running LOGGING Audit for project: ${projectId}`);
+    console.log(`Running LOGGING Audit for project: ${projectId}`);
 
     google.options({ auth: client });
 
@@ -63,7 +63,7 @@ exports.checkLogging = async (req, res) => {
       },
     });
   } catch (err) {
-    console.error("❌ Error in LOGGING audit:", err);
+    console.error(" Error in LOGGING audit:", err);
     return res.status(500).json({
       error: "Logging audit failed",
       details: err.message,

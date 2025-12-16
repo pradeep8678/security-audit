@@ -35,7 +35,7 @@ async function checkAccessTransparency(keyFile, passedAuthClient = null) {
   } catch (err) {
     findings.push({
       issue: "Access Transparency not enabled",
-      exposureRisk: "Medium",
+      exposureRisk: "🟠 Medium",
       recommendation: "Enable Access Transparency.",
     });
   }

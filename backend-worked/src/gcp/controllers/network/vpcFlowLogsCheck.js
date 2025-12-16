@@ -1,12 +1,12 @@
-// networkRules/vpcFlowLogsCheck.js
+// networkRules/vpcFLowLogsCheck.js
 const { google } = require("googleapis");
 
 /**
- * 🔍 Ensure VPC Flow Logs Are Enabled for All Subnets
+ * 🔍 Ensure VPC FLow Logs Are Enabled for All Subnets
  * @param {Object} keyFile - Parsed GCP service account JSON
- * @returns {Array} - Subnets without VPC Flow Logs enabled
+ * @returns {Array} - Subnets without VPC FLow Logs enabled
  */
-async function checkVpcFlowLogs(keyFile, passedAuthClient = null) {
+async function checkVpcFLowLogs(keyFile, passedAuthClient = null) {
   const compute = google.compute("v1");
   const findings = [];
 
@@ -40,27 +40,27 @@ async function checkVpcFlowLogs(keyFile, passedAuthClient = null) {
         // Skip default networks or auto-generated ones if desired, though usually defaulting to explicit "default" name check
         if (subnet.network && subnet.network.endsWith("/default")) return;
 
-        const flowLogsEnabled = subnet.enableFlowLogs === true;
+        const fLowLogsEnabled = subnet.enableFLowLogs === true;
 
-        if (!flowLogsEnabled) {
+        if (!fLowLogsEnabled) {
           findings.push({
             subnetName: subnet.name,
             network: subnet.network,
             region: subnet.region,
-            access: "vpc-flow-logs-disabled",
+            access: "vpc-fLow-logs-disabled",
             exposureRisk: "🟠 Medium",
-            recommendation: `Enable VPC Flow Logs for subnet "${subnet.name}" to improve visibility, security analysis, and incident response.`,
+            recommendation: `Enable VPC FLow Logs for subnet "${subnet.name}" to improve visibility, security analysis, and incident response.`,
           });
         }
       });
     });
   } catch (err) {
-    console.error("Error checking VPC Flow Logs:", err.message);
-    throw new Error("Failed to check VPC Flow Logs");
+    console.error("Error checking VPC FLow Logs:", err.message);
+    throw new Error("Failed to check VPC FLow Logs");
   }
 
   return findings;
 }
 
 // ✅ Export function directly
-module.exports = checkVpcFlowLogs;
+module.exports = checkVpcFLowLogs;

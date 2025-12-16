@@ -6,5 +6,5 @@
   height: 100%;
   z-index: -1;
   background: #000;   /* NEW → BLACK BASE LAYER */
-  overflow: hidden;
+  overfLow: hidden;
 }

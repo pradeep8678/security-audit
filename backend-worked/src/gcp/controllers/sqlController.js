@@ -27,7 +27,7 @@ exports.checkSQL = async (req, res) => {
       return res.status(400).json({ error: "Key file is required" });
     }
 
-    console.log(`🚀 Running Cloud SQL Audit for project: ${projectId}`);
+    console.log(`Running Cloud SQL Audit for project: ${projectId}`);
 
     // Execute all SQL checks
     const sslScan = await checkSqlRequireSsl(client, projectId);
@@ -47,7 +47,7 @@ exports.checkSQL = async (req, res) => {
     });
 
   } catch (error) {
-    console.error("❌ Error in Cloud SQL Audit:", error);
+    console.error("Error in Cloud SQL Audit:", error);
     return res.status(500).json({
       error: "Cloud SQL audit failed",
       details: error.message,

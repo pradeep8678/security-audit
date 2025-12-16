@@ -26,7 +26,7 @@ exports.checkBigQuery = async (req, res) => {
       return res.status(400).json({ error: "Key file is required" });
     }
 
-    console.log(`🚀 Running BigQuery Audit for project: ${projectId}`);
+    console.log(` Running BigQuery Audit for project: ${projectId}`);
 
     // Execute BigQuery Checks
     const datasetPublicAccessScan =
@@ -48,7 +48,7 @@ exports.checkBigQuery = async (req, res) => {
       },
     });
   } catch (err) {
-    console.error("❌ BigQuery Audit Error:", err);
+    console.error("BigQuery Audit Error:", err);
     return res
       .status(500)
       .json({ error: "BigQuery audit failed", details: err.message });

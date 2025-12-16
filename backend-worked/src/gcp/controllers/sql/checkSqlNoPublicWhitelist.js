@@ -18,10 +18,10 @@ module.exports = async function checkSqlNoPublicWhitelist(auth, projectId) {
             instance: inst.name,
             region: inst.region,
             authorizedNetwork: net.value,
-            exposureRisk: "🔴 Critical",
+            exposureRisk: "🔴 High",
             issue: "Cloud SQL whitelists ALL public IPv4 addresses (0.0.0.0/0).",
             recommendation:
-              "Remove 0.0.0.0/0 from authorized networks. Allow only specific IPs or use private IP.",
+              "Remove 0.0.0.0/0 from authorized networks. AlLow only specific IPs or use private IP.",
           });
         }
       }

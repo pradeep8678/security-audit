@@ -31,7 +31,7 @@ exports.listVMs = async (req, res) => {
     });
 
 
-    console.log(`🚀 Scanning Compute Engine instances for project: ${projectId}`);
+    console.log(`Scanning Compute Engine instances for project: ${projectId}`);
 
     const projectInfo = await compute.projects.get({ project: projectId });
     const projectMetadata = projectInfo.data.commonInstanceMetadata || {};
@@ -74,7 +74,7 @@ exports.listVMs = async (req, res) => {
                   internalIP: nic.networkIP,
                   machineType: vmData.machineType,
                   status: vmData.status,
-                  exposureRisk: "High", // Public IP is always high exposure
+                  exposureRisk: "🔴 High", // Public IP is always high exposure
                   recommendation:
                     "This VM has a public IP. Restrict public exposure, remove the external IP if not required, and enforce firewall rules.",
                 });
@@ -92,8 +92,8 @@ exports.listVMs = async (req, res) => {
         : null;
     }
 
-    console.log(`✔️ Public IP VMs: ${publicVMs.length}`);
-    console.log(`✔️ Total VMs scanned: ${allVMs.length}`);
+    console.log(`Public IP VMs: ${publicVMs.length}`);
+    console.log(`Total VMs scanned: ${allVMs.length}`);
 
     // RULE EXECUTION
     const defaultSAResults = checkDefaultServiceAccount(allVMs);
@@ -121,7 +121,7 @@ exports.listVMs = async (req, res) => {
     });
 
   } catch (err) {
-    console.error("❌ Error in VM audit:", err);
+    console.error("Error in VM audit:", err);
     return res.status(500).json({ error: err.message });
   }
 };

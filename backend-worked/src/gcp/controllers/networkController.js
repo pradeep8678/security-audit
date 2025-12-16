@@ -4,7 +4,7 @@
 // =========================
 const checkDefaultNetwork = require("./network/checkDefaultNetwork");
 const checkLegacyNetworks = require("./network/checkLegacyNetworks");
-const checkVpcFlowLogs = require("./network/vpcFlowLogsCheck");
+const checkVpcFLowLogs = require("./network/vpcFLowLogsCheck");
 const checkSshOpenToInternet = require("./network/checkSshOpenToInternet");
 const checkRdpAccess = require("./network/rdpAccessCheck");
 
@@ -38,7 +38,7 @@ exports.checkNETWORK = async (req, res) => {
     const [
       defaultNetworkScan,
       legacyNetworkScan,
-      vpcFlowLogsScan,
+      vpcFLowLogsScan,
       sshOpenScan,
       rdpOpenScan,
       dnsSecScan,
@@ -47,7 +47,7 @@ exports.checkNETWORK = async (req, res) => {
     ] = await Promise.all([
       checkDefaultNetwork(keyFile, client),
       checkLegacyNetworks(keyFile, client),
-      checkVpcFlowLogs(keyFile, client),
+      checkVpcFLowLogs(keyFile, client),
       checkSshOpenToInternet(keyFile, client),
       checkRdpAccess(keyFile, client),
       checkDnssecEnabled(keyFile, client),
@@ -61,7 +61,7 @@ exports.checkNETWORK = async (req, res) => {
       networkScan: {
         defaultNetworkScan,
         legacyNetworkScan,
-        vpcFlowLogsScan,
+        vpcFLowLogsScan,
         sshOpenScan,
         rdpOpenScan,
         dnsSecScan,
@@ -71,7 +71,7 @@ exports.checkNETWORK = async (req, res) => {
     });
 
   } catch (err) {
-    console.error("❌ Error in NETWORK audit:", err);
+    console.error("Error in NETWORK audit:", err);
     return res.status(500).json({
       error: "NETWORK audit failed",
       details: err.message,

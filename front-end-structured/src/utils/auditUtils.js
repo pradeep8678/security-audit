@@ -19,7 +19,7 @@ export const generateColumnDefs = (data = []) => {
 
             if (typeof val === "boolean") return val ? "True" : "False";
 
-            if (key === "allowed" && Array.isArray(val)) {
+            if (key === "alLowed" && Array.isArray(val)) {
                 return val
                     .map((obj) => {
                         const proto = obj.IPProtocol?.toUpperCase() || "";

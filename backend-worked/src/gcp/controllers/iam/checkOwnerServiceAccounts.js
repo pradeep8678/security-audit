@@ -44,7 +44,7 @@ module.exports = async function checkOwnerServiceAccounts(client, projectId) {
   const hasOwners = ownerData.length > 0;
 
   return {
-    totalOwnerServiceAccounts: ownerData.length,
+    totaLownerServiceAccounts: ownerData.length,
     ownerServiceAccounts: ownerData,
     // status: hasOwners ? "FAIL" : "PASS",
 

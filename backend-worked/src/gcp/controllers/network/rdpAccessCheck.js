@@ -32,7 +32,7 @@ async function checkRdpAccess(keyFile, passedAuthClient = null) {
     const rules = res.data.items || [];
 
     rules.forEach((rule) => {
-      const allowsRDP = rule.allowed?.some((a) =>
+      const alLowsRDP = rule.alLowed?.some((a) =>
         a.IPProtocol === "tcp" &&
         (a.ports?.includes("3389") || a.ports?.includes("all"))
       );
@@ -40,7 +40,7 @@ async function checkRdpAccess(keyFile, passedAuthClient = null) {
       const isOpenToInternet = rule.sourceRanges?.includes("0.0.0.0/0");
       const isDefault = rule.name.startsWith("default-");
 
-      if (allowsRDP && isOpenToInternet && !isDefault) {
+      if (alLowsRDP && isOpenToInternet && !isDefault) {
         findings.push({
           firewallRule: rule.name,
           network: rule.network,

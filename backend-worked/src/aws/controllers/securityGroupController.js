@@ -69,12 +69,12 @@ exports.scanSecurityGroups = async (req, res) => {
                   ...rule.IpRanges.map(r => r.CidrIp),
                   ...rule.Ipv6Ranges.map(r => r.CidrIpv6),
                 ],
-                impact: "This allows anyone on the internet to reach your resources.",
+                impact: "This alLows anyone on the internet to reach your resources.",
                 recommendation: [
                   `Remove 0.0.0.0/0 or ::/0 from inbound rules.`,
                   `Limit access to specific IPs or corporate ranges.`,
                   `Use VPN / Direct Connect / Security Groups referencing instead of public access.`,
-                  `If required temporarily, ensure logging & monitoring via VPC Flow Logs.`
+                  `If required temporarily, ensure logging & monitoring via VPC FLow Logs.`
                 ]
               });
             }

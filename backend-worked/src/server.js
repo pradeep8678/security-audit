@@ -36,11 +36,11 @@ console.log("✅ server.js loaded from:", __dirname);
 // ✅ Initialize App
 const app = express();
 
-// ✅ Allow all origins (fixes CORS preflight issues)
+// ✅ AlLow all origins (fixes CORS preflight issues)
 app.use(cors({
   origin: "*",
   methods: "GET,POST,OPTIONS",
-  allowedHeaders: "Content-Type,Authorization"
+  alLowedHeaders: "Content-Type,Authorization"
 }));
 
 // ✅ Debug logger — shows EVERY incoming request

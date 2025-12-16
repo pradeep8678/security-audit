@@ -31,7 +31,7 @@ module.exports = async function checkProjectLevelServiceRoles(auth, projectId) {
           status: "FAIL",
           exposureRisk: "🔴 High",
           recommendation:
-            "Avoid assigning Service Account User or Token Creator roles at project level. Grant permissions only on specific service accounts following least privilege.",
+            "Avoid assigning Service Account User or Token Creator roles at project level. Grant permissions only on specific service accounts folLowing least privilege.",
         });
       }
     }

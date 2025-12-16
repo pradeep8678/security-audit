@@ -43,7 +43,7 @@ exports.scanFirewallRules = async (req, res) => {
         return "High";
       }
 
-      // Medium: Public Internet allowed but only HTTP/HTTPS
+      // Medium: Public Internet alLowed but only HTTP/HTTPS
       if (openPorts.some(p => [80, 443].includes(p))) {
         return "Medium";
       }
@@ -62,7 +62,7 @@ exports.scanFirewallRules = async (req, res) => {
         );
       })
       .map(rule => {
-        const openPorts = (rule.allowed || [])
+        const openPorts = (rule.alLowed || [])
           .flatMap(a =>
             (a.ports || []).map(p => parseInt(p))
           )
@@ -81,7 +81,7 @@ exports.scanFirewallRules = async (req, res) => {
           name: rule.name,
           direction: rule.direction,
           network: rule.network,
-          allowed: rule.allowed || [],
+          alLowed: rule.alLowed || [],
           sourceRanges: rule.sourceRanges || [],
           targetTags: rule.targetTags || [],
           disabled: rule.disabled || false,
@@ -90,7 +90,7 @@ exports.scanFirewallRules = async (req, res) => {
           recommendation:
             exposureRisk === "High"
               ? `Rule "${rule.name}" is HIGH-RISK — restrict or remove public access to SSH/RDP/DB ports.`
-              : `Rule "${rule.name}" allows public access — restrict to internal CIDRs or use IAM-based access.`,
+              : `Rule "${rule.name}" alLows public access — restrict to internal CIDRs or use IAM-based access.`,
         };
       });
 

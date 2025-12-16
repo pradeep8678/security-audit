@@ -1,7 +1,7 @@
 /**
  * Rule: Ensure That IP Forwarding Is Not Enabled on Instances
  * -----------------------------------------------------------
- * IP forwarding allows a VM to route network traffic.
+ * IP forwarding alLows a VM to route network traffic.
  * This should only be enabled for router/NAT/security-appliance workloads.
  * For normal VM instances, this increases security risk.
  */
@@ -40,6 +40,6 @@ module.exports = function checkIpForwarding(instances) {
       riskyInstances.length > 0
         ? "Some VMs have IP forwarding enabled, which may expose them to unintended traffic routing risks."
         : "All VMs have IP forwarding disabled — ideal configuration for most workloads.",
-    exposureRisk: riskyInstances.length > 0 ? "🔴 HIGH" : "🟡 LOW", // overall risk
+    exposureRisk: riskyInstances.length > 0 ? "🔴 HIGH" : "🟡 Low", // overall risk
   };
 };

@@ -30,7 +30,7 @@ exports.checkIAM = async (req, res) => {
       return res.status(400).json({ error: "Key file is required" });
     }
 
-    console.log(`🚀 Running IAM Audit for project: ${projectId}`);
+    console.log(`Running IAM Audit for project: ${projectId}`);
 
     // Execute checks
     const ownerSaScan = await checkOwnerServiceAccounts(client, projectId);
@@ -56,7 +56,7 @@ exports.checkIAM = async (req, res) => {
       },
     });
   } catch (err) {
-    console.error("❌ Error in IAM audit:", err);
+    console.error("Error in IAM audit:", err);
     return res.status(500).json({ error: "IAM audit failed", details: err.message });
   }
 };

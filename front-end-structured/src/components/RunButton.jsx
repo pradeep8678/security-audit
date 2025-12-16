@@ -9,7 +9,7 @@ export default function RunButton({ onClick, disabled, title = "Run Audit" }) {
         color: "#fff",
         border: "none",
         borderRadius: "6px",
-        cursor: disabled ? "not-allowed" : "pointer",
+        cursor: disabled ? "not-alLowed" : "pointer",
         opacity: disabled ? 0.7 : 1,
         transition: "all 0.2s ease"
       }}

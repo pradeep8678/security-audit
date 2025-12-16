@@ -93,10 +93,10 @@ async function analyzeAwsLoadBalancers({ accessKeyId, secretAccessKey }) {
               exposed_via_sg: exposedToWorld ? "Yes" : "No",
               severity:
                 isPublic && exposedToWorld ? "HIGH" :
-                isPublic ? "MEDIUM" : "LOW",
+                isPublic ? "MEDIUM" : "Low",
               issue:
                 isPublic && exposedToWorld
-                  ? "Load Balancer is internet-facing AND security group allows 0.0.0.0/0"
+                  ? "Load Balancer is internet-facing AND security group alLows 0.0.0.0/0"
                   : isPublic
                   ? "Load Balancer is internet-facing"
                   : "Internal Load Balancer",
@@ -149,7 +149,7 @@ async function analyzeAwsLoadBalancers({ accessKeyId, secretAccessKey }) {
               exposed_via_sg: exposedToWorld ? "Yes" : "No",
               severity:
                 isPublic && exposedToWorld ? "HIGH" :
-                isPublic ? "MEDIUM" : "LOW",
+                isPublic ? "MEDIUM" : "Low",
               issue:
                 isPublic && exposedToWorld
                   ? "Classic Load Balancer is internet-facing AND security group exposes it to 0.0.0.0/0"

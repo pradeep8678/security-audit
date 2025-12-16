@@ -10,8 +10,8 @@ export default function AgTable({ rowData, columnDefs, height = 400 }) {
     <div
       style={{
         width: "100%",
-        overflowX: "auto",
-        overflowY: "hidden",
+        overfLowX: "auto",
+        overfLowY: "hidden",
       }}
     >
       <div
@@ -28,7 +28,7 @@ export default function AgTable({ rowData, columnDefs, height = 400 }) {
           domLayout="autoHeight"
           animateRows={true}
           suppressRowClickSelection={true}
-          enableCellTextSelection={true}     // 🔥 copy/paste allowed
+          enableCellTextSelection={true}     // 🔥 copy/paste alLowed
           defaultColDef={{
             sortable: true,
             filter: true,

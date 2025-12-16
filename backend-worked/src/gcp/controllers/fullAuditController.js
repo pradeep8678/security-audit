@@ -68,7 +68,7 @@ async function invokeController(label, controllerFn, file, parsedKey, authClient
         });
       }
     } catch (err) {
-      console.error(`❌ ${label} audit failed:`, err.message);
+      console.error(` ${label} audit failed:`, err.message);
       resolve({
         name: label,
         success: false,
@@ -88,7 +88,7 @@ exports.runFullAudit = async (req, res) => {
       return res.status(400).json({ error: "Service account key file required" });
     }
 
-    console.log("🚀 Starting Full GCP Security Audit (Optimized)...");
+    console.log(" Starting Full GCP Security Audit (Optimized)...");
 
     // 1. Parse Key File ONCE
     const file = req.file;
@@ -125,7 +125,7 @@ exports.runFullAudit = async (req, res) => {
       results,
     });
   } catch (error) {
-    console.error("🔥 Full audit failed:", error);
+    console.error(" Full audit failed:", error);
     return res.status(500).json({
       message: "Full audit failed",
       error: error.message,

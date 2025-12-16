@@ -33,7 +33,7 @@ module.exports = function checkBlockProjectSSHKeys(instances, projectMetadata) {
         "No project-level SSH keys detected. All VMs are secure by default.",
       humanReadableStatus:
         "No project-level SSH keys detected. All VMs are secure by default.",
-      exposureRisk: "🟡 LOW",
+      exposureRisk: "Low",
     };
   }
 
@@ -76,8 +76,8 @@ module.exports = function checkBlockProjectSSHKeys(instances, projectMetadata) {
     status: riskyInstances.length > 0 ? "FAIL" : "PASS",
     humanReadableStatus:
       riskyInstances.length > 0
-        ? "Some VMs allow project-wide SSH keys, which may expose them to unauthorized SSH access."
+        ? "Some VMs alLow project-wide SSH keys, which may expose them to unauthorized SSH access."
         : "All VMs correctly block project-wide SSH keys.",
-    exposureRisk: riskyInstances.length > 0 ? "🔴 HIGH" : "🟡 LOW", // overall risk
+    exposureRisk: riskyInstances.length > 0 ? "🔴 HIGH" : "🟡 Low", // overall risk
   };
 };

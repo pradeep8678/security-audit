@@ -27,13 +27,13 @@ async function analyzeCloudRunAndFunctions(keyFile, passedAuthClient = null) {
 
     // FUNCTION to compute exposure risk
     const computeRisk = ({ ingress, hasAllUsers, hasAllAuthUsers, unauthenticated }) => {
-      if (hasAllUsers || unauthenticated === "Yes" || ingress === "ALLOW_ALL" || ingress === "all") {
-        return "High";
+      if (hasAllUsers || unauthenticated === "Yes" || ingress === "ALLow_ALL" || ingress === "all") {
+        return "🔴 High";
       }
       if (hasAllAuthUsers || ingress === "internal-and-cloud-load-balancing") {
-        return "Medium";
+        return "🟠 Medium";
       }
-      return "Low";
+      return "🟡 Low";
     };
 
     // ---------------- Cloud Functions ----------------

@@ -33,10 +33,10 @@ async function checkSshOpenToInternet(keyFile, passedAuthClient = null) {
       // Skip disabled rules
       if (fw.disabled) continue;
 
-      const allows = fw.allowed || [];
+      const alLows = fw.alLowed || [];
 
-      // Check if SSH (tcp/22) is allowed
-      const allowsSSH = allows.some((rule) => {
+      // Check if SSH (tcp/22) is alLowed
+      const alLowsSSH = alLows.some((rule) => {
         const isTCP = rule.IPProtocol === "tcp";
         const has22 =
           rule.ports &&
@@ -44,7 +44,7 @@ async function checkSshOpenToInternet(keyFile, passedAuthClient = null) {
         return isTCP && has22;
       });
 
-      if (!allowsSSH) continue;
+      if (!alLowsSSH) continue;
 
       // Check if ANY source range is 0.0.0.0/0
       const isOpenToWorld =
@@ -61,7 +61,7 @@ async function checkSshOpenToInternet(keyFile, passedAuthClient = null) {
           type: "Firewall Rule",
           access: "ssh-open-to-internet",
           exposureRisk: "🔴 High",
-          recommendation: `Firewall rule "${fw.name}" allows SSH (TCP/22) from 0.0.0.0/0. ` +
+          recommendation: `Firewall rule "${fw.name}" alLows SSH (TCP/22) from 0.0.0.0/0. ` +
             `Restrict SSH access to specific IP addresses or use Identity-Aware Proxy (IAP).`,
         });
       }

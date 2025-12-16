@@ -55,7 +55,7 @@ async function checkUniformBucketLevelAccess(keyFile, passedAuthClient = null) {
           }
 
           let exposure = "None";
-          let exposureRisk = "Low";
+          let exposureRisk = "🟡 Low";
 
           const isAllUsers = bindings.some((b) =>
             (b.members || []).includes("allUsers")

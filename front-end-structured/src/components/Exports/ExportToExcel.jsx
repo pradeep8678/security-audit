@@ -212,7 +212,7 @@ export default function ExportToExcel({ auditResult, onClick }) {
         transition: "all 0.2s ease",
       }}
       onMouseEnter={(e) => {
-        e.target.style.background = "rgba(59, 130, 246, 0.2)"; // Primary glow
+        e.target.style.background = "rgba(59, 130, 246, 0.2)"; // Primary gLow
         e.target.style.color = "#60a5fa"; // Primary lighter
         e.target.style.paddingLeft = "20px"; // Slide effect
       }}

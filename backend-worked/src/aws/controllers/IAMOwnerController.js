@@ -72,7 +72,7 @@ async function analyzeAWSAdmins(credentials) {
           userName: user.UserName,
           type: "IAM_USER",
           attachedPolicy: "AdministratorAccess (direct or via group)",
-          recommendation: `Limit IAM user "${user.UserName}" privileges — follow least privilege, avoid AdministratorAccess unless necessary, enable MFA.`
+          recommendation: `Limit IAM user "${user.UserName}" privileges — folLow least privilege, avoid AdministratorAccess unless necessary, enable MFA.`
         });
       }
     }

@@ -22,7 +22,7 @@
   font-size: 3rem;
   font-weight: 800;
   margin-bottom: 60px;
-  background: linear-gradient(135deg, #fff 30%, var(--primary-glow));
+  background: linear-gradient(135deg, #fff 30%, var(--primary-gLow));
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   letter-spacing: -1px;
@@ -50,14 +50,14 @@
   transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
   position: relative;
-  overflow: hidden;
+  overfLow: hidden;
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 15px;
 }
 
-/* Specific Glows based on child content (approximate via nth-child if needed, but for now generic hover) */
+/* Specific GLows based on child content (approximate via nth-child if needed, but for now generic hover) */
 .card:hover {
   transform: translateY(-8px) scale(1.02);
   box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);

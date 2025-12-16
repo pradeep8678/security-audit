@@ -62,8 +62,8 @@ module.exports = function checkOsLogin(instances, projectMetadata) {
     status: riskyInstances.length > 0 ? "FAIL" : "PASS",
     humanReadableStatus:
       riskyInstances.length > 0
-        ? "Some VMs do not enforce OS Login, allowing unmanaged SSH keys and increasing the risk of unauthorized access."
+        ? "Some VMs do not enforce OS Login, alLowing unmanaged SSH keys and increasing the risk of unauthorized access."
         : "All VMs enforce OS Login. Centralized IAM-based SSH access is properly configured.",
-    exposureRisk: riskyInstances.length > 0 ? "🔴 HIGH" : "🟡 LOW", // overall risk
+    exposureRisk: riskyInstances.length > 0 ? "🔴 HIGH" : "🟡 Low", // overall risk
   };
 };

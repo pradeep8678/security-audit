@@ -51,12 +51,12 @@ exports.checkGKEClusters = async (req, res) => {
 
       const networkPolicyEnabled = cluster.networkPolicy?.enabled || false;
 
-      let exposureRisk = "Low";
+      let exposureRisk = "🟡 Low";
 
       // Risk scoring
       if (!privateNodes) exposureRisk = "High";
-      if (!hasAuthorizedNetworks && !privateNodes) exposureRisk = "High";
-      if (privateNodes && !hasAuthorizedNetworks) exposureRisk = "Medium";
+      if (!hasAuthorizedNetworks && !privateNodes) exposureRisk = "🔴 High";
+      if (privateNodes && !hasAuthorizedNetworks) exposureRisk = "🟠 Medium";
 
       const issues = [];
 

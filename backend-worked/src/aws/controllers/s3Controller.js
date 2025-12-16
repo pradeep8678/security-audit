@@ -49,7 +49,7 @@ async function analyzeS3Buckets(credentials) {
 
         if (publicACL.length > 0) {
           isPublic = true;
-          findings.push("Bucket ACL allows public access (AllUsers/AuthenticatedUsers).");
+          findings.push("Bucket ACL alLows public access (AllUsers/AuthenticatedUsers).");
         }
       } catch (err) {
         findings.push(`Unable to read ACL: ${err.message}`);

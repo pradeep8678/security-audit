@@ -130,7 +130,7 @@ exports.checkLoadBalancersAudit = async (req, res) => {
               armorRuleStrength.startsWith("Weak") ||
               httpsRedirect === "No"
             ) {
-              exposureRisk = "High";
+              exposureRisk = "🔴 High";
             }
             // Medium: Some issues
             else if (
@@ -139,9 +139,9 @@ exports.checkLoadBalancersAudit = async (req, res) => {
               armorRuleStrength.startsWith("Strong") &&
               httpsRedirect === "Yes"
             ) {
-              exposureRisk = "Low";
+              exposureRisk = "🟡 Low";
             } else {
-              exposureRisk = "Medium";
+              exposureRisk = "🟠 Medium";
             }
           } catch (err) {
             console.error(`Error fetching LB details for ${lbName}:`, err.message);
@@ -161,7 +161,7 @@ exports.checkLoadBalancersAudit = async (req, res) => {
           if (httpsRedirect === "No")
             recommendation.push("Enable HTTPS redirect.");
           if (recommendation.length === 0)
-            recommendation.push("Configuration follows best practices.");
+            recommendation.push("Configuration folLows best practices.");
 
           lbData.push({
             name: lbName,

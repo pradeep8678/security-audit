@@ -34,7 +34,7 @@ exports.auditBuckets = async (req, res) => {
       projectId: keyFile.project_id,
       publicAccessFindings,
       uniformAccessFindings,
-      // message: "✅ Bucket audit completed successfully",
+      // message: "Bucket audit completed successfully",
     });
   } catch (err) {
     console.error("Error in auditBuckets controller:", err);
