@@ -2,8 +2,12 @@ import React from "react";
 import AgTable from "../table/AgTable";
 import styles from "../../styles/FullAudit.module.css";
 import { generateColumnDefs } from "../../utils/auditUtils";
+import RiskExposureGraph from "../Graphs/RiskExposureGraph";
 
-const AuditSection = ({ title, type, data, subSections }) => {
+const AuditSection = ({ id, title, type, data, subSections, rawData }) => {
+
+
+
     // ------------------------------------------
     // MULTI-SECTION (e.g. Broken Down by Rule)
     // ------------------------------------------
@@ -30,6 +34,10 @@ const AuditSection = ({ title, type, data, subSections }) => {
         return (
             <div className={styles.card}>
                 <h3 className={styles.cardTitle}>{title}</h3>
+
+                {/* Risk Graph for Multi-Section (e.g. VM Scan) */}
+                <RiskExposureGraph serviceName={id} data={rawData} />
+
                 {populatedSubSections.map((sub, idx) => {
                     const colDefs = generateColumnDefs(sub.data);
                     return (
@@ -53,6 +61,10 @@ const AuditSection = ({ title, type, data, subSections }) => {
     return (
         <div className={styles.card}>
             <h3 className={styles.cardTitle}>{title}</h3>
+
+            {/* Risk Graph for Single Section */}
+            <RiskExposureGraph serviceName={id} data={rawData} />
+
             <AgTable rowData={data} columnDefs={colDefs} height={400} />
         </div>
     );
