@@ -69,12 +69,17 @@
 }
 
 body {
-  background-color: black;
-  /* Reverted to black as per user request */
-  /* background-image removed to let ColorBends shine */
+  background-color: #0B1121;
+  /* Darker than slate-900 */
+  background-image:
+    radial-gradient(circle at 50% 0%, rgba(56, 189, 248, 0.1) 0%, transparent 50%),
+    linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+  background-size: 100% 100%, 40px 40px, 40px 40px;
+  background-attachment: fixed;
   color: var(--text-main);
   font-family: var(--font-sans);
-  overfLow-x: hidden;
+  overflow-x: hidden;
   min-height: 100vh;
 }
 
