@@ -6,7 +6,6 @@ import AuditSection from "../../components/Audit/AuditSection";
 import styles from "../../styles/FullAudit.module.css";
 import { RESOURCE_LIST } from "../../utils/auditUtils";
 import { useAuditData } from "../../hooks/useAuditData";
-import RiskExposureGraph from "../../components/Graphs/RiskExposureGraph";
 
 export default function FullAudit({ file }) {
   const [loading, setLoading] = useState(false);
@@ -133,23 +132,19 @@ export default function FullAudit({ file }) {
         )}
       </div>
 
+      {/* Render Results */}
       {allDataLoaded && (
-        <>
+        <div className={styles.resultsContainer}>
+          {RESOURCE_LIST.map(resId => {
+            // Filter by selection
+            if (selectedResource && selectedResource !== resId) return null;
 
+            const sectionData = sectionsMap[resId];
+            if (!sectionData) return null;
 
-          {/* Render Results */}
-          <div className={styles.resultsContainer}>
-            {RESOURCE_LIST.map(resId => {
-              // Filter by selection
-              if (selectedResource && selectedResource !== resId) return null;
-
-              const sectionData = sectionsMap[resId];
-              if (!sectionData) return null;
-
-              return <AuditSection key={resId} {...sectionData} rawData={result[resId]} />;
-            })}
-          </div>
-        </>
+            return <AuditSection key={resId} {...sectionData} />;
+          })}
+        </div>
       )}
     </div>
   );
