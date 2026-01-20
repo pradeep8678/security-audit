@@ -94,6 +94,26 @@ exports.runFullAudit = async (req, res) => {
     const file = req.file;
     const parsedKey = JSON.parse(file.buffer.toString("utf8"));
 
+    // --- DEBUG & FIX START ---
+    console.log("🔍 Inspecting Service Account Key...");
+    console.log(`- Project ID: ${parsedKey.project_id}`);
+    console.log(`- Client Email: ${parsedKey.client_email}`);
+    
+    if (parsedKey.private_key) {
+      // Check for common issue: escaped newlines in private key
+      if (parsedKey.private_key.includes("\\n") && !parsedKey.private_key.includes("\n")) {
+        console.log("⚠️ Private key contains escaped newlines (\\n). Fixing it...");
+        parsedKey.private_key = parsedKey.private_key.replace(/\\n/g, "\n");
+      }
+      
+      const keyLines = parsedKey.private_key.split("\n");
+      console.log(`- Private Key: Valid Header? ${parsedKey.private_key.startsWith("-----BEGIN PRIVATE KEY-----")}`);
+      console.log(`- Private Key Line Count: ${keyLines.length}`);
+    } else {
+      console.error("❌ Private Key is MISSING from the uploaded file!");
+    }
+    // --- DEBUG & FIX END ---
+
     // 2. Initialize Google Auth Client ONCE
     const auth = new google.auth.GoogleAuth({
       credentials: parsedKey,
